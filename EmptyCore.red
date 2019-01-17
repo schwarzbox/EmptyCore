@@ -36,12 +36,13 @@ Red [
 
 ; v0.2
 ; numbers
-; update view problem (use modal window?)
+; change font theme rtf color for syntax native mezanine
+; show errors in terminal
+
 ; check quotes print prin view probe input ask!
 ; improve ask and input in loop
-; change font theme rtf color for syntax
 
-; show errors in terminal
+; update view problem (use modal window?)
 
 ; refactor
 
@@ -98,42 +99,43 @@ set-theme: func []  [
     syswin/color: dispclr
     syswinfont/color: sysclr
     syswin/font: syswinfont
-    sysuifont/color: sysclr
-    sysbut/font: sysuifont
+    sysbarfont/color: sysclr
+    sysbut/font: sysbarfont
+    syspan/color: dispclr
     themelab/font/color: sysclr
-    iolab/font/color: sysclr
-    iowin/color: dispclr
+    themefont/font/color: sysclr
 
-
-    drawmachine/color: dispclr
-    codemachine/color: dispclr
+    codemill/color: dispclr
     codenumbers/color: dispclr
     terminal/color: dispclr
     viewengine/color: dispclr
+    drawmachine/color: dispclr
+    iospace/color: dispclr
 
-    drawlabel/font: syswinfont
     codelabel/font: syswinfont
     terminallabel/font: syswinfont
     viewlabel/font: syswinfont
+    drawlabel/font: syswinfont
+    iolabel/font/color: syswinfont
 
-    codemachine/font/color: codeclr
+    codemill/font/color: codeclr
     codenumbers/font/color: codeclr
     terminal/font/color: codeclr
 ]
 
 set-uicolor "ecode"
 
-syswin-wh: 1360x256
-sysui-wh: as-pair (syswin-wh/x / 2) 23
+syswin-wh: 1106x256
+sysbar-wh: as-pair (syswin-wh/x + 256) 23
 sysclose: 0x256
-livewin-wh: as-pair syswin-wh/x 512
+livewin-wh: as-pair (syswin-wh/x + 256) 512
 close: true
 txtsize: 10
 labsize: 16
 
 syswinfont: make font! [name: "Andale Mono"
                         style: [regular] size: txtsize color: sysclr]
-sysuifont: make font! [name: "Helvetica"
+sysbarfont: make font! [name: "Helvetica"
                         style: [regular] size: labsize color: sysclr]
 
 Core: [
@@ -145,29 +147,27 @@ Core: [
     below
     livewin: panel livewin-wh
     across
-    panel sysui-wh [
+    panel sysbar-wh [
         origin 0x1 space 0x0
-        sysbut: button "⚛︎" 64x24 font sysuifont
+        sysbut: button "⚛︎" 64x24 font sysbarfont
                             on-click [close: not close
                             ] on-over [
                                 face/selected: either event/away? [none][true]
                             ]
     ]
 
-    panel sysui-wh [
-        origin 0x1 space 0x0
-        themelab: text "Color" right font-color sysclr
-        drop-list  data uitheme on-change [set-uicolor face/text
-                                                set-theme]
-                                on-create [face/selected: 1]
-        themefont: text "Font" right font-color sysclr
-    ]
     return
-    syswin: display code syswin-wh on-change [
-                    attempt [livewin/pane: layout/only load face/text]
-                ]
+    syswin: display code syswin-wh on-change [attempt [livewin/pane:
+                                                layout/only load face/text]]
 
-
+    syspan: panel 256x256 dispclr [
+        origin 0x1 space 0x0
+        themelab: text "UI Color" font-color sysclr
+        drop-list  data uitheme on-change [set-uicolor face/text set-theme]
+                                on-create [face/selected: 1]
+        return
+        themefont: text "Font" font-color sysclr
+    ]
     do [attempt [livewin/pane: layout/only load syswin/text]]
 ]
 View/options/flags layout Core [actors:
