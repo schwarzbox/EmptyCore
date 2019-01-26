@@ -34,76 +34,104 @@ Red [
     Needs: View
 ]
 
-; v0.2
-; numbers
-; change font theme rtf color for syntax native mezanine
+; v0.3
+; leftshift
+; problem save when use new file
+
+; scrool tab panel
+; drag and drop
+
+; filetree update delete copy save
+; quit q sourcecode
+; Red Header if?
+; custom style sys button  🧩 ⚙️ 🎬 ⚠️ ▼ ⚗︎ ⚙ ⚒︎ ⚛︎
+
+; make constants sizes
+; user change codefnt
+
+; scrool numbers refcator close button
+; save editor state for all panels separate default and and user setup
+
+; 0.4
 ; show errors in terminal
+; theme rtf color for syntax native mezanine
 
 ; check quotes print prin view probe input ask!
-; improve ask and input in loop
+; improve ask and input in loop change val
 
 ; update view problem (use modal window?)
 
-; refactor
+; v0.5
+; make modules draw
+; save images
 
-; change fonts or make panel
-; close buttons for draw machine view engine
-
-; find emoji for buttons  🧩⚙️ 🎬 ⚠️ ▼ ⚗︎ ⚙ ⚒︎ ⚛︎
-; custom style buttons
-
-; make modules draw file system(setting)
-; drag and drop files to Code
-
-; save editor state for all panels
-; save script in var
-; save image in var
-; add auto save command and cmd-s cmd-shift-s cmd-o
+; v0.6
 
 system/view/auto-sync?: yes
 
+; constants
+⌘: false
+leftshift: false
 ; load editable sourcecode
 do read %sourcecode.red
 code: mold sourcecode
 
+backclr: 16.16.16
 mainclr: tuple!
 dispclr: tuple!
 codeclr: tuple!
 sysclr: tuple!
 
-uitheme: block!
-set-uicolor: func [theme] [
-    uicolors: [ecode: [
-            main: 32.32.32
-            disp: 42.42.42
-            code: 222.222.222
-            system: 32.196.255
-        ]
-    ]
-    uitheme: copy []
-    foreach file read %. [
-        if file = "uicolors.red" [do read %uicolors.red]
-    ]
+uicolors: block!
+uifonts: block!
 
-    foreach clr uicolors [
-        if (type? clr) = set-word! [append uitheme form clr]
+colors: [
+    Core: [
+        main: 32.32.32
+        disp: 42.42.42
+        code: 222.222.222
+        system: 32.196.255
     ]
-
-    mainclr: do rejoin["uicolors/" theme "/main"]
-    dispclr: do rejoin["uicolors/" theme "/disp"]
-    codeclr: do rejoin["uicolors/" theme "/code"]
-    sysclr: do rejoin["uicolors/" theme  "/system"]
+]
+fonts: [
+    Andale: [name "Andale Mono" size 10]
 ]
 
-set-theme: func []  [
+set-scheme: func [schemeclr schemefnt] [
+    foreach file read %.. [
+        if file = "scheme.red" [do read %../scheme.red]
+    ]
+    uicolors: copy []
+    foreach clr colors [
+        if (type? clr) = set-word! [append uicolors form clr]
+    ]
+    uifonts: copy []
+    foreach fnt fonts [
+        if (type? fnt) = set-word! [append uifonts form fnt]
+    ]
+    mainclr: do rejoin["colors/" schemeclr "/main"]
+    dispclr: do rejoin["colors/" schemeclr "/disp"]
+    codeclr: do rejoin["colors/" schemeclr "/code"]
+    sysclr: do rejoin["colors/" schemeclr  "/system"]
+
+    tmpfnt: do rejoin["fonts/" schemefnt]
+
+    syswinfnt: make font! [name: tmpfnt/name
+                        style: [regular] size: tmpfnt/size color: sysclr]
+    sysbarfnt: make font! [name: "Monaco"
+                        style: [regular] size: 18 color: sysclr]
+]
+
+apply-scheme: func []  [
     syswin/color: dispclr
-    syswinfont/color: sysclr
-    syswin/font: syswinfont
-    sysbarfont/color: sysclr
-    sysbut/font: sysbarfont
+    syswinfnt/color: sysclr
+    syswin/font: syswinfnt
+    sysbar/color: mainclr
+    sysbarfnt/color: sysclr
+    sysbut/font: sysbarfnt
     syspan/color: dispclr
-    themelab/font/color: sysclr
-    themefont/font/color: sysclr
+    schemelab/font/color: sysclr
+    schemefont/font/color: sysclr
 
     codemill/color: dispclr
     codenumbers/color: dispclr
@@ -112,44 +140,60 @@ set-theme: func []  [
     drawmachine/color: dispclr
     iospace/color: dispclr
 
-    codelabel/font: syswinfont
-    terminallabel/font: syswinfont
-    viewlabel/font: syswinfont
-    drawlabel/font: syswinfont
-    iolabel/font/color: syswinfont
+    codelabel/font: syswinfnt
+    terminallabel/font: syswinfnt
+    viewlabel/font: syswinfnt
+    drawlabel/font: syswinfnt
+    iolabel/font: syswinfnt
+    iocol: iohidden/font/color
+    iohidden/font: copy syswinfnt
+    if iocol = gray [iohidden/font/color: iocol]
+
+    codeclose/font/color: sysclr
+    terminalclose/font/color: sysclr
+    viewclose/font/color: sysclr
+    drawclose/font/color: sysclr
+    ioclose/font/color: sysclr
+
+    codepan/color: mainclr
+    terminalpan/color: mainclr
+    viewpan/color: mainclr
+    drawpan/color: mainclr
+    iopan/color: mainclr
 
     codemill/font/color: codeclr
-    codenumbers/font/color: codeclr
     terminal/font/color: codeclr
+
+    foreach tab tabpan/pane [
+        either tab/color = tabpan/color [
+            tab/color: mainclr
+        ][
+            tab/color: dispclr
+        ]
+    ]
+    tabpan/color: mainclr
 ]
 
-set-uicolor "ecode"
-
-syswin-wh: 1106x256
+set-scheme "Core" "Andale"
+syswin-wh: 1154x256
 sysbar-wh: as-pair (syswin-wh/x + 256) 23
+sysbut-wh: 64x24
 sysclose: 0x256
 livewin-wh: as-pair (syswin-wh/x + 256) 512
 close: true
-txtsize: 10
-labsize: 16
-
-syswinfont: make font! [name: "Andale Mono"
-                        style: [regular] size: txtsize color: sysclr]
-sysbarfont: make font! [name: "Helvetica"
-                        style: [regular] size: labsize color: sysclr]
 
 Core: [
     title "EmptyCore"
-    backdrop mainclr
-    origin 0x0 space 2x0
-    style display: area dispclr wrap font syswinfont no-border
+    backdrop backclr
+    origin 0x0 space 1x0
+    style display: area dispclr wrap font syswinfnt no-border
 
     below
     livewin: panel livewin-wh
     across
-    panel sysbar-wh [
+    sysbar: panel sysbar-wh mainclr [
         origin 0x1 space 0x0
-        sysbut: button "⚛︎" 64x24 font sysbarfont
+        sysbut: button "⚛︎" sysbut-wh font sysbarfnt
                             on-click [close: not close
                             ] on-over [
                                 face/selected: either event/away? [none][true]
@@ -162,36 +206,47 @@ Core: [
 
     syspan: panel 256x256 dispclr [
         origin 0x1 space 0x0
-        themelab: text "UI Color" font-color sysclr
-        drop-list  data uitheme on-change [set-uicolor face/text set-theme]
-                                on-create [face/selected: 1]
+        schemelab: text "Scheme" font syswinfnt
+        colorlist: drop-list  data uicolors on-change [
+                                    set-scheme face/text fontlist/text
+                                    apply-scheme]
+                                on-create [
+                                    face/selected: 1
+                                    face/text: pick face/data face/selected
+                                ]
         return
-        themefont: text "Font" font-color sysclr
+        schemefont: text "Font" font syswinfnt
+        fontlist: drop-list  data uifonts on-change [
+                                    set-scheme colorlist/text face/text
+                                    apply-scheme]
+                                on-create [
+                                    face/selected: 1
+                                    face/text: pick face/data face/selected
+                                ]
     ]
     do [attempt [livewin/pane: layout/only load syswin/text]]
 ]
 View/options/flags layout Core [actors:
     object [
-        cmd: false
-        on-key-up: func [key event][
-            if form event/key = "left-command" [cmd: false]
-        ]
-        on-key-down: func [key event][
+        ; on-over: func [face] [face/color: mainclr]
+        on-key-down: func [face event][
             ; escape
-            if event/key = 27 [unview quit]
-            if cmd and (event/key = #"Q") [unview quit]
-            if cmd and (event/key = #"S") [print "save"]
-            if cmd and (event/key = #"O") [print "open"]
-            if (form event/key = "left-command") [cmd: true]
-        ]
+            ; if event/key = 27 [unview quit]
+            if (⌘ and (event/key = #"Q")) [unview quit]
+            if (form event/key) = "left-command" [⌘: true]
+            if (form event/key) = "left-shift" [leftshift: true]
 
+        ]
+        on-key-up: func [face event][
+            if (form event/key) = "left-command" [⌘: false]
+            if (form event/key) = "left-shift" [leftshift: false]
+        ]
         on-click: func[face][
             if sysbut/selected [
                 face/size: either close [face/size + sysclose
                                         ][face/size - sysclose]
             ]
         ]
-        on-over: func [face] [face/color: mainclr]
         ; on-close: func [face event][ alert ["🔴"]]
     ]
 ][no-max no-min]
