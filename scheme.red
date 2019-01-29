@@ -21,6 +21,6 @@ colors: [
 
 fonts: [
     Andale: [name "Andale Mono" size 10]
-    Monaco: [name "Monaco" size 10]
+    PT: [name "PT Mono" size 10]
     Menlo: [name "Menlo" size 10]
 ]

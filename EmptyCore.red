@@ -34,32 +34,25 @@ Red [
     Needs: View
 ]
 
-; v0.3
-; leftshift
-; problem save when use new file
-
-; scrool tab panel
-; drag and drop
-
-; filetree update delete copy save
-; quit q sourcecode
-; Red Header if?
-; custom style sys button  🧩 ⚙️ 🎬 ⚠️ ▼ ⚗︎ ⚙ ⚒︎ ⚛︎
-
-; make constants sizes
+;v0.4
+; tree custom
+; button style? 🧩 ⚙️ 🎬 ⚠️  📂 ⚗︎ ⚇ ☒
+; refactor vars
+; func fold button for panels use constants sizes
+; resize panels
 ; user change codefnt
 
-; scrool numbers refcator close button
+; scrool numbers; improve io nav field
 ; save editor state for all panels separate default and and user setup
 
 ; 0.4
 ; show errors in terminal
-; theme rtf color for syntax native mezanine
-
 ; check quotes print prin view probe input ask!
 ; improve ask and input in loop change val
 
+
 ; update view problem (use modal window?)
+; theme rtf color for syntax native mezanine
 
 ; v0.5
 ; make modules draw
@@ -118,8 +111,9 @@ set-scheme: func [schemeclr schemefnt] [
 
     syswinfnt: make font! [name: tmpfnt/name
                         style: [regular] size: tmpfnt/size color: sysclr]
+
     sysbarfnt: make font! [name: "Monaco"
-                        style: [regular] size: 18 color: sysclr]
+                        style: [regular] size: 16 color: sysclr]
 ]
 
 apply-scheme: func []  [
@@ -127,11 +121,12 @@ apply-scheme: func []  [
     syswinfnt/color: sysclr
     syswin/font: syswinfnt
     sysbar/color: mainclr
+
     sysbarfnt/color: sysclr
     sysbut/font: sysbarfnt
-    syspan/color: dispclr
-    schemelab/font/color: sysclr
-    schemefont/font/color: sysclr
+    ; syspan/color: dispclr
+    ; schemelab/font: syswinfnt
+    ; schemefont/font: syswinfnt
 
     codemill/color: dispclr
     codenumbers/color: dispclr
@@ -145,9 +140,23 @@ apply-scheme: func []  [
     viewlabel/font: syswinfnt
     drawlabel/font: syswinfnt
     iolabel/font: syswinfnt
+
+    termbutcol: terminalbut/font/color
+    terminalbut/font: copy syswinfnt
+    if termbutcol = gray [terminalbut/font/color: termbutcol]
+
+    iocreatedir/font: syswinfnt
+    iocreatefile/font: syswinfnt
+    iorename/font: syswinfnt
+    ioremove/font: syswinfnt
+
     iocol: iohidden/font/color
     iohidden/font: copy syswinfnt
     if iocol = gray [iohidden/font/color: iocol]
+
+    ionavlab/font: syswinfnt
+
+    viewrefresh/font: syswinfnt
 
     codeclose/font/color: sysclr
     terminalclose/font/color: sysclr
@@ -163,21 +172,12 @@ apply-scheme: func []  [
 
     codemill/font/color: codeclr
     terminal/font/color: codeclr
-
-    foreach tab tabpan/pane [
-        either tab/color = tabpan/color [
-            tab/color: mainclr
-        ][
-            tab/color: dispclr
-        ]
-    ]
-    tabpan/color: mainclr
 ]
 
 set-scheme "Core" "Andale"
 syswin-wh: 1154x256
 sysbar-wh: as-pair (syswin-wh/x + 256) 23
-sysbut-wh: 64x24
+sysbut-wh: 48x24
 sysclose: 0x256
 livewin-wh: as-pair (syswin-wh/x + 256) 512
 close: true
@@ -198,7 +198,7 @@ Core: [
                             ] on-over [
                                 face/selected: either event/away? [none][true]
                             ]
-    ]
+    ]react []
 
     return
     syswin: display code syswin-wh on-change [attempt [livewin/pane:
@@ -206,16 +206,16 @@ Core: [
 
     syspan: panel 256x256 dispclr [
         origin 0x1 space 0x0
-        schemelab: text "Scheme" font syswinfnt
+        schemelab: text "Scheme" font syswinfnt react [face/font: syswin/font]
         colorlist: drop-list  data uicolors on-change [
                                     set-scheme face/text fontlist/text
-                                    apply-scheme]
-                                on-create [
+                                    apply-scheme
+                                ]on-create [
                                     face/selected: 1
                                     face/text: pick face/data face/selected
                                 ]
         return
-        schemefont: text "Font" font syswinfnt
+        schemefont: text "Font" font syswinfnt react [face/font: syswin/font]
         fontlist: drop-list  data uifonts on-change [
                                     set-scheme colorlist/text face/text
                                     apply-scheme]
@@ -223,7 +223,7 @@ Core: [
                                     face/selected: 1
                                     face/text: pick face/data face/selected
                                 ]
-    ]
+    ] react [face/color: syswin/color]
     do [attempt [livewin/pane: layout/only load syswin/text]]
 ]
 View/options/flags layout Core [actors:
@@ -249,5 +249,5 @@ View/options/flags layout Core [actors:
         ]
         ; on-close: func [face event][ alert ["🔴"]]
     ]
-][no-max no-min]
+][no-min]
 

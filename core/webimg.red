@@ -1,4 +1,6 @@
-view [
+Red []
+
+View [
     below
     disp: panel gray 490x370 [
 
@@ -14,4 +16,5 @@ view [
     ]
 
 ]
+
 
