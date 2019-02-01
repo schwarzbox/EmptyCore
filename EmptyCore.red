@@ -34,24 +34,32 @@ Red [
     Needs: View
 ]
 
+; all var stay forever?
+
 ;v0.4
-; tree custom
-; button style? 🧩 ⚙️ 🎬 ⚠️  📂 ⚗︎ ⚇ ☒
-; refactor vars
+; spaces in names
+; arrow nav
+; field color cursor
+; scrool numbers and problem with less lines
+
+; close button file?
+; tab to nav panel autocomplete
+; nav every loop?
+
+; source button with arrow 🧩 ⚙️ 🎬 ⚠️  📂 ⚗︎ ␛
+; refactor vars and show all source code
 ; func fold button for panels use constants sizes
 ; resize panels
-; user change codefnt
+; user font panel
 
-; scrool numbers; improve io nav field
 ; save editor state for all panels separate default and and user setup
 
-; 0.4
-; show errors in terminal
+; 0.5
 ; check quotes print prin view probe input ask!
 ; improve ask and input in loop change val
 
-
-; update view problem (use modal window?)
+; update view problem react (use modal window?)
+; same color change for all apply-scheme or reacors
 ; theme rtf color for syntax native mezanine
 
 ; v0.5
@@ -59,6 +67,7 @@ Red [
 ; save images
 
 ; v0.6
+; error line
 
 system/view/auto-sync?: yes
 
@@ -117,6 +126,7 @@ set-scheme: func [schemeclr schemefnt] [
 ]
 
 apply-scheme: func []  [
+    askclose
     syswin/color: dispclr
     syswinfnt/color: sysclr
     syswin/font: syswinfnt
@@ -130,57 +140,54 @@ apply-scheme: func []  [
 
     codemill/color: dispclr
     codenumbers/color: dispclr
-    terminal/color: dispclr
+    console/color: dispclr
     viewengine/color: dispclr
     drawmachine/color: dispclr
-    iospace/color: dispclr
+    treespace/color: dispclr
 
     codelabel/font: syswinfnt
-    terminallabel/font: syswinfnt
+    consolelabel/font: syswinfnt
     viewlabel/font: syswinfnt
     drawlabel/font: syswinfnt
-    iolabel/font: syswinfnt
+    treelabel/font: syswinfnt
 
-    termbutcol: terminalbut/font/color
-    terminalbut/font: copy syswinfnt
-    if termbutcol = gray [terminalbut/font/color: termbutcol]
+    consolecol: consolebut/font/color
+    consolebut/font: copy syswinfnt
+    if consolecol = gray [consolebut/font/color: consolecol]
+    consolereset/font: syswinfnt
 
-    iocreatedir/font: syswinfnt
-    iocreatefile/font: syswinfnt
-    iorename/font: syswinfnt
-    ioremove/font: syswinfnt
+    treedir/font: syswinfnt
+    treefile/font: syswinfnt
+    treename/font: syswinfnt
+    treedel/font: syswinfnt
 
-    iocol: iohidden/font/color
-    iohidden/font: copy syswinfnt
-    if iocol = gray [iohidden/font/color: iocol]
-
-    ionavlab/font: syswinfnt
-
-    viewrefresh/font: syswinfnt
+    treecol: treehide/font/color
+    treehide/font: copy syswinfnt
+    if treecol = gray [treehide/font/color: treecol]
 
     codeclose/font/color: sysclr
-    terminalclose/font/color: sysclr
+    consoleclose/font/color: sysclr
     viewclose/font/color: sysclr
     drawclose/font/color: sysclr
-    ioclose/font/color: sysclr
+    treeclose/font/color: sysclr
 
     codepan/color: mainclr
-    terminalpan/color: mainclr
+    consolepan/color: mainclr
     viewpan/color: mainclr
     drawpan/color: mainclr
-    iopan/color: mainclr
+    treepan/color: mainclr
 
     codemill/font/color: codeclr
-    terminal/font/color: codeclr
+    console/font/color: codeclr
 ]
 
 set-scheme "Core" "Andale"
 syswin-wh: 1154x256
 sysbar-wh: as-pair (syswin-wh/x + 256) 23
 sysbut-wh: 48x24
-sysclose: 0x256
+sysclose-wh: 0x256
 livewin-wh: as-pair (syswin-wh/x + 256) 512
-close: true
+sysclose: true
 
 Core: [
     title "EmptyCore"
@@ -193,19 +200,21 @@ Core: [
     across
     sysbar: panel sysbar-wh mainclr [
         origin 0x1 space 0x0
-        sysbut: button "⚛︎" sysbut-wh font sysbarfnt
-                            on-click [close: not close
+        sysbut: button "⚛︎" sysbut-wh font sysbarfnt on-click [
+                                sysclose: not sysclose
                             ] on-over [
                                 face/selected: either event/away? [none][true]
                             ]
     ]react []
 
     return
-    syswin: display code syswin-wh on-change [attempt [livewin/pane:
-                                                layout/only load face/text]]
+    syswin: display code syswin-wh on-change [
+        ; avoid delete content selected file when reload source code
+        attempt [livewin/pane: layout/only load face/text]
+    ]
 
     syspan: panel 256x256 dispclr [
-        origin 0x1 space 0x0
+        origin 0x2 space 0x0
         schemelab: text "Scheme" font syswinfnt react [face/font: syswin/font]
         colorlist: drop-list  data uicolors on-change [
                                     set-scheme face/text fontlist/text
@@ -228,11 +237,33 @@ Core: [
 ]
 View/options/flags layout Core [actors:
     object [
-        ; on-over: func [face] [face/color: mainclr]
         on-key-down: func [face event][
-            ; escape
-            ; if event/key = 27 [unview quit]
-            if (⌘ and (event/key = #"Q")) [unview quit]
+            ; escape 27
+            ; delete 8
+            if event/key = 27 [askclose]
+            if (⌘) [
+                case [
+                    event/key = #"Q" [unview quit]
+                    event/key = #"N" [
+                        ; WIP
+                        ; askname "Create File" deffile
+                    ]
+                    event/key = 8 [
+                        sel: treelist/selected
+                        if (sel <> none) [
+                            ; WIP
+                            ; askyes "Remove File" sel
+                        ]
+                    ]
+                    event/key = #"S" [autosave]
+                    event/key = #"B" [
+                        stop: stopexe
+                        if stop [stopexe: false]
+                        execute codemill
+                        stopexe: stop
+                    ]
+                ]
+            ]
             if (form event/key) = "left-command" [⌘: true]
             if (form event/key) = "left-shift" [leftshift: true]
 
@@ -243,11 +274,11 @@ View/options/flags layout Core [actors:
         ]
         on-click: func[face][
             if sysbut/selected [
-                face/size: either close [face/size + sysclose
-                                        ][face/size - sysclose]
+                face/size: either sysclose [face/size + sysclose-wh
+                                        ][face/size - sysclose-wh]
             ]
         ]
-        ; on-close: func [face event][ alert ["🔴"]]
+        on-close: func [face event][autosave]
     ]
 ][no-min]
 
