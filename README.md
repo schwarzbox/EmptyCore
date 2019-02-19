@@ -15,8 +15,6 @@ To run code manually press cmd-b or ↺ in Console panel.
 
 You can see source code of the "EmptyCore" and change it on the fly. Be careful.
 
-Parsing very simple and you can have some strange situation if use "view" "print", "prin", "probe" words as strings.
-
 Function "ask" and "input" not yet implemented.
 
 All variables stay defined until close "EmptyCore". If you define and after comment variable - nothing happen. Variable saved in the memmory.
@@ -31,7 +29,7 @@ To run source code: clone repository, download & install [Red](https://www.red-l
 red EmptyCore.red
 ```
 
-v0.35
+v0.36
 
 - simple file tree
 
@@ -41,19 +39,27 @@ v0.35
 
 - console output
 
-- graphical output
+- VID output
 
 - show errors in console
 
-- hotkeys cmd-q quit cmd-s save cmd-b build esc close dialog
+- arrow navigation in file tree
+
+- fix key word parsing "view" "print" "probe" "prin"
+
+- fix View reactor
+
+- hotkeys cmd-q quit cmd-s save cmd-b build esc close dialog window
 
 v0.4
 
+- font size panel
+
+- save user setting for source code and run after main programm
+
+- draw machine
+
 - close button for file in code editor
-
-- dialog cursor color
-
-- arrow navigation in file tree
 
 - tree focus problem
 
@@ -63,17 +69,14 @@ v0.4
 
 - improve numbers
 
-- save user setting for source code and run after main programm
-
-- font panel
 
 v0.5
 
-- improve key word parsing "view" "print" "probe" "prin" "ask" "input"
+- compile user projects for diferent systems
+
+- improve "ask" "input" "about" "help"
 
 - syntax color for editor
-
-- problem with view reactor?
 
 - show line error
 

@@ -33,52 +33,59 @@ Red [
     License: "MIT"
     Needs: View
 ]
-
+; 🧩 ⚙️ ⚗︎
 ; all var stay forever?
 
-;v0.4
-; spaces in names
-; arrow nav
-; field color cursor
-; scrool numbers and problem with less lines
+; v0.4
 
-; close button file?
-; tab to nav panel autocomplete
-; nav every loop?
+; lineheight 24 for font size
+; save user setup and load after main setup
 
-; source button with arrow 🧩 ⚙️ 🎬 ⚠️  📂 ⚗︎ ␛
-; refactor vars and show all source code
+; change CLI on area
+
 ; func fold button for panels use constants sizes
-; resize panels
-; user font panel
+; resize panels add move handlers
 
-; save editor state for all panels separate default and and user setup
+; focus on list for dir and show created file and dir
+
+; make modules draw
+
+; refactor vars and show all source code (use with compose)
+
+; ask input loop pause
 
 ; 0.5
-; check quotes print prin view probe input ask!
-; improve ask and input in loop change val
+; improve delete line
 
-; update view problem react (use modal window?)
-; same color change for all apply-scheme or reacors
 ; theme rtf color for syntax native mezanine
 
-; v0.5
-; make modules draw
-; save images
+; project compile
+; final project window
 
 ; v0.6
+; scrool numbers
+
 ; error line
+; tabs
+; barbuttons open/close highlight
+; ? ?? help what about
+; import modules
 
 system/view/auto-sync?: yes
 
 ; constants
 ⌘: false
 leftshift: false
-; load editable sourcecode
+
+; save View
+ViewRed: get 'View
+; support function
+do read %sourcefunc.red
+; load sourcecode
 do read %sourcecode.red
 code: mold sourcecode
 
-backclr: 16.16.16
+backclr: 16.16.16.0
 mainclr: tuple!
 dispclr: tuple!
 codeclr: tuple!
@@ -89,10 +96,10 @@ uifonts: block!
 
 colors: [
     Core: [
-        main: 32.32.32
-        disp: 42.42.42
-        code: 222.222.222
-        system: 32.196.255
+        main: 32.32.32.0
+        disp: 42.42.42.0
+        code: 222.222.222.0
+        system: 32.196.255.0
     ]
 ]
 fonts: [
@@ -121,22 +128,21 @@ set-scheme: func [schemeclr schemefnt] [
     syswinfnt: make font! [name: tmpfnt/name
                         style: [regular] size: tmpfnt/size color: sysclr]
 
-    sysbarfnt: make font! [name: "Monaco"
-                        style: [regular] size: 16 color: sysclr]
+
 ]
 
-apply-scheme: func []  [
-    askclose
+apply-scheme: does  [
     syswin/color: dispclr
     syswinfnt/color: sysclr
-    syswin/font: syswinfnt
+    sysbut/font: copy syswinfnt
     sysbar/color: mainclr
 
-    sysbarfnt/color: sysclr
-    sysbut/font: sysbarfnt
-    ; syspan/color: dispclr
-    ; schemelab/font: syswinfnt
-    ; schemefont/font: syswinfnt
+    syswin/font: syswinfnt
+    syslab/font: syswinfnt
+    syspan/color: dispclr
+    schemelab/font: syswinfnt
+    schemefont/font: syswinfnt
+    schemesize/font: syswinfnt
 
     codemill/color: dispclr
     codenumbers/color: dispclr
@@ -145,31 +151,40 @@ apply-scheme: func []  [
     drawmachine/color: dispclr
     treespace/color: dispclr
 
-    codelabel/font: syswinfnt
-    consolelabel/font: syswinfnt
-    viewlabel/font: syswinfnt
-    drawlabel/font: syswinfnt
-    treelabel/font: syswinfnt
+    codelabel/font: copy syswinfnt
+    consolelabel/font: copy syswinfnt
+    viewlabel/font: copy syswinfnt
+    drawlabel/font: copy syswinfnt
+    treelabel/font: copy syswinfnt
+
+    codesavelab/font: copy syswinfnt
 
     consolecol: consolebut/font/color
     consolebut/font: copy syswinfnt
     if consolecol = gray [consolebut/font/color: consolecol]
-    consolereset/font: syswinfnt
+    consolereset/font: copy syswinfnt
+    flashline/color: sysclr + 0.0.0.222
 
-    treedir/font: syswinfnt
-    treefile/font: syswinfnt
-    treename/font: syswinfnt
-    treedel/font: syswinfnt
+    treedir/font: copy syswinfnt
+    treefile/font: copy syswinfnt
+    treename/font: copy syswinfnt
+    treedel/font: copy syswinfnt
 
     treecol: treehide/font/color
     treehide/font: copy syswinfnt
     if treecol = gray [treehide/font/color: treecol]
 
-    codeclose/font/color: sysclr
-    consoleclose/font/color: sysclr
-    viewclose/font/color: sysclr
-    drawclose/font/color: sysclr
-    treeclose/font/color: sysclr
+    treeask/color: mainclr
+    askinp/color: dispclr
+    asktext/font: copy syswinfnt
+    askinp/font: copy syswinfnt
+    yesbut/font: copy syswinfnt
+
+    codeclose/font: copy syswinfnt
+    consoleclose/font: copy syswinfnt
+    viewclose/font: copy syswinfnt
+    drawclose/font: copy syswinfnt
+    treeclose/font: copy syswinfnt
 
     codepan/color: mainclr
     consolepan/color: mainclr
@@ -181,16 +196,18 @@ apply-scheme: func []  [
     console/font/color: codeclr
 ]
 
+upd-scheme: does [
+    attempt [livewin/pane: layout/only load syswin/text]
+]
+
 set-scheme "Core" "Andale"
 syswin-wh: 1154x256
 sysbar-wh: as-pair (syswin-wh/x + 256) 23
-sysbut-wh: 48x24
 sysclose-wh: 0x256
 livewin-wh: as-pair (syswin-wh/x + 256) 512
-sysclose: true
 
 Core: [
-    title "EmptyCore"
+    title "⚛︎ EmptyCore v0.35"
     backdrop backclr
     origin 0x0 space 1x0
     style display: area dispclr wrap font syswinfnt no-border
@@ -200,22 +217,26 @@ Core: [
     across
     sysbar: panel sysbar-wh mainclr [
         origin 0x1 space 0x0
-        sysbut: button "⚛︎" sysbut-wh font sysbarfnt on-click [
-                                sysclose: not sysclose
-                            ] on-over [
-                                face/selected: either event/away? [none][true]
-                            ]
-    ]react []
+
+        sysbut: text "▾" 16 font syswinfnt on-down [
+                                face/selected: true
+                                either face/text = "▾" [
+                                    face/text: "▸"
+                                ][
+                                    face/text: "▾"
+                                ]
+                            ] on-over [flashbutton face event]
+        syslab: text "Source" font syswinfnt
+    ]
 
     return
     syswin: display code syswin-wh on-change [
-        ; avoid delete content selected file when reload source code
         attempt [livewin/pane: layout/only load face/text]
     ]
 
     syspan: panel 256x256 dispclr [
         origin 0x2 space 0x0
-        schemelab: text "Scheme" font syswinfnt react [face/font: syswin/font]
+        schemelab: text "Scheme" font syswinfnt
         colorlist: drop-list  data uicolors on-change [
                                     set-scheme face/text fontlist/text
                                     apply-scheme
@@ -224,7 +245,7 @@ Core: [
                                     face/text: pick face/data face/selected
                                 ]
         return
-        schemefont: text "Font" font syswinfnt react [face/font: syswin/font]
+        schemefont: text "Font" font syswinfnt
         fontlist: drop-list  data uifonts on-change [
                                     set-scheme colorlist/text face/text
                                     apply-scheme]
@@ -232,53 +253,60 @@ Core: [
                                     face/selected: 1
                                     face/text: pick face/data face/selected
                                 ]
-    ] react [face/color: syswin/color]
-    do [attempt [livewin/pane: layout/only load syswin/text]]
+        return
+        schemesize: text "Size" font syswinfnt
+        button "+" 32 [
+                syswinfnt/size: syswinfnt/size + 1
+                apply-scheme
+                upd-scheme
+            ]
+        button "-" 32 [
+                syswinfnt/size: syswinfnt/size - 1
+                apply-scheme
+                upd-scheme
+            ]
+        do[upd-scheme]
+    ]
 ]
-View/options/flags layout Core [actors:
+ViewRed/options/flags layout Core [actors:
     object [
         on-key-down: func [face event][
             ; escape 27
             ; delete 8
-            if event/key = 27 [askclose]
             if (⌘) [
                 case [
-                    event/key = #"Q" [unview quit]
-                    event/key = #"N" [
-                        ; WIP
-                        ; askname "Create File" deffile
+                    event/key = #"Q" [autosave unview quit]
+                    ((event/key = #"N") and (not askopen)) [
+                        closemenu treefile does [
+                            askuser/file treefile "Create File" deffile]
                     ]
                     event/key = 8 [
                         sel: treelist/selected
-                        if (sel <> none) [
-                            ; WIP
-                            ; askyes "Remove File" sel
+                        if (codefile) [
+                            spl: split-path codefile
+                            closemenu treedel does [
+                                askuser/del treedel "Remove" spl/2]
                         ]
                     ]
                     event/key = #"S" [autosave]
-                    event/key = #"B" [
-                        stop: stopexe
-                        if stop [stopexe: false]
-                        execute codemill
-                        stopexe: stop
-                    ]
+                    event/key = #"B" [build]
                 ]
             ]
             if (form event/key) = "left-command" [⌘: true]
             if (form event/key) = "left-shift" [leftshift: true]
-
         ]
         on-key-up: func [face event][
             if (form event/key) = "left-command" [⌘: false]
             if (form event/key) = "left-shift" [leftshift: false]
         ]
-        on-click: func[face][
+        on-up: func[face event][
             if sysbut/selected [
-                face/size: either sysclose [face/size + sysclose-wh
-                                        ][face/size - sysclose-wh]
+                face/size: either sysbut/text = "▸" [face/size - sysclose-wh
+                                    ][face/size + sysclose-wh]
+                sysbut/selected: none
             ]
         ]
         on-close: func [face event][autosave]
-    ]
-][no-min]
+        ]
+    ][no-min]
 
