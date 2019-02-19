@@ -2,7 +2,7 @@
 
 WIP
 
-v0.35
+v0.36
 
 "EmptyCore" - Experimental LiveCoding Environment
 
