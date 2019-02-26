@@ -11,6 +11,7 @@ View [
 			insert t/text rejoin [face/text " "]]
 		text 128x32 "v0.36" center font-color white
 		f: field 128 center "EmptyCore" on-change [t/text: face/text]
+		button
 	]
 ]
 

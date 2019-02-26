@@ -23,8 +23,6 @@ do [
     defdir: "newcore"
     extensions: [".red" ".reds" ".txt"]
     codefile: none
-    codefnt: make font! [name: "Andale Mono"
-                            style: [regular] size: 10 color: gray]
 ]
 
 sourcecode: [
@@ -171,7 +169,8 @@ sourcecode: [
     return
 
     style display: area dispclr wrap font codefnt no-border
-    style numbar: area dispclr font codefnt font-size 10 font-color gray no-border
+    style terminal: area dispclr wrap font consfnt no-border
+    style numbar: area dispclr font codefnt font-color gray no-border
 
     codepan: panel mainclr [
         below
@@ -194,16 +193,17 @@ sourcecode: [
             codelabel: text "CodeMill" font syswinfnt
             codesavelab: text "" 24 font syswinfnt
 
-            codefilelab: text "" 256 font codefnt
+            codefilelab: text "" 256 font codefnt font-color gray
         ]
 
         across
         codenumbers: numbar "" right 41x370 disabled on-focus [
             set-focus codemill]
 
-        codemill: display "" 598x370 focus font-size 10 font-color codeclr
-             on-change [
+        codemill: display "" 598x370 focus font-color codeclr
+            on-change [
                 oldlines: codelines
+
                 face/extra: copy codemill/text
                 either ((form face/text) <> form (read codefile)) [
                     codesavelab/text: "○"
@@ -217,53 +217,44 @@ sourcecode: [
             ]on-down [
                 mousepos: event/offset
                 codelines: shownumbers
-                linenum: (mousepos/y / lineheight)
+                linenum: (mousepos/y / linehei)
                 if linenum >= (codelines) [
                     linenum: codelines - 1
                 ]
                 showline
             ]on-key-down[
                 if (not codefile) [setfile deffile]
-                if event/key = 'up [
-                    if linenum > 0 [linenum: linenum - 1]
-                    showline
+                switch event/key [
+                    up [ if linenum > 0 [linenum: linenum - 1]
+                        showline
+                    ]
+                    down [ if linenum < (codelines - 1) [linenum: linenum + 1]
+                        showline
+                    ]
                 ]
-                if event/key = 'down [
-                    if linenum < 24 [linenum: linenum + 1]
-                    showline
-                ]
-                if event/key = 13 [
-                    linenum: linenum + 1
+                if event/key = 13 [ linenum: linenum + 1
                     showline
                 ]
             ]on-key-up[
-                ; if event/key = 8 [
-                    if (oldlines > codelines) [
-                        oldlines: codelines
-                        linenum: linenum - 1
-                        showline
-                    ]
-                ; ]
+                deltalines: oldlines - codelines
+                if (deltalines > 0) [
+                    oldlines: codelines
+                    linenum: linenum - deltalines
+                    showline
+                ]
+
             ]on-unfocus [
                 if not getinput [set-focus face]
             ]on-over[
             ]on-create [
                 codefile: none
+                initline
                 codelines: shownumbers
-                oldlines:codelines
+                oldlines: codelines
             ]
         return
 
-        ; WIP
-        at 0x19 flashline: base 41x15 with [color: sysclr + 0.0.0.222] on-focus [set-focus codemill]
-
-        do [
-            linenum: 0
-            lineheight: codemill/size/y / 24
-            showline: does[
-                flashline/offset: 0x19 + (as-pair 0 (linenum * lineheight))
-            ]
-        ]
+        at 0x0 flashline: base 41x16 with [color: sysclr + 0.0.0.222] on-focus [set-focus codemill]
 
         below
         consolepan: panel mainclr [
@@ -291,7 +282,8 @@ sourcecode: [
                 ]
             ]
         ]
-        console: display "" 640x104 font-size 9 font-color codeclr on-key-down[
+
+        console: terminal "" 640x104 font-color codeclr on-key-down[
             ; enter 13
             if event/key = 13 [
                 userinput: copy []

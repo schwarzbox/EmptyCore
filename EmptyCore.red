@@ -37,25 +37,22 @@ Red [
 ; all var stay forever?
 
 ; v0.4
-
-; lineheight 24 for font size
 ; save user setup and load after main setup
-
+; resize panels add move handlers
 ; change CLI on area
 
-; func fold button for panels use constants sizes
-; resize panels add move handlers
-
 ; focus on list for dir and show created file and dir
+; func fold button for panels use constants sizes (change sizes with font)
 
+
+; 0.5
 ; make modules draw
 
 ; refactor vars and show all source code (use with compose)
 
 ; ask input loop pause
 
-; 0.5
-; improve delete line
+; 0.6
 
 ; theme rtf color for syntax native mezanine
 
@@ -128,7 +125,10 @@ set-scheme: func [schemeclr schemefnt] [
     syswinfnt: make font! [name: tmpfnt/name
                         style: [regular] size: tmpfnt/size color: sysclr]
 
-
+    codefnt: make font! [name: tmpfnt/name
+                            style: [regular] size: tmpfnt/size  color: codeclr]
+    consfnt: copy codefnt
+    consfnt/size: codefnt/size - 1
 ]
 
 apply-scheme: does  [
@@ -192,8 +192,16 @@ apply-scheme: does  [
     drawpan/color: mainclr
     treepan/color: mainclr
 
-    codemill/font/color: codeclr
-    console/font/color: codeclr
+    codefnt/color: codeclr
+    codefnt/size: syswinfnt/size
+    consfnt/color: codeclr
+    consfnt/size: syswinfnt/size - 1
+    codemill/font: copy codefnt
+    console/font: copy consfnt
+    codenumbers/font: copy codefnt
+    codenumbers/font/color: gray
+    codefilelab/font: copy codefnt
+    codefilelab/font/color: gray
 ]
 
 upd-scheme: does [
@@ -207,7 +215,7 @@ sysclose-wh: 0x256
 livewin-wh: as-pair (syswin-wh/x + 256) 512
 
 Core: [
-    title "⚛︎ EmptyCore v0.35"
+    title "⚛︎ EmptyCore v0.36"
     backdrop backclr
     origin 0x0 space 1x0
     style display: area dispclr wrap font syswinfnt no-border
@@ -231,7 +239,7 @@ Core: [
 
     return
     syswin: display code syswin-wh on-change [
-        attempt [livewin/pane: layout/only load face/text]
+        upd-scheme
     ]
 
     syspan: panel 256x256 dispclr [
@@ -248,23 +256,22 @@ Core: [
         schemefont: text "Font" font syswinfnt
         fontlist: drop-list  data uifonts on-change [
                                     set-scheme colorlist/text face/text
-                                    apply-scheme]
-                                on-create [
+                                    apply-scheme
+                                ]on-create [
                                     face/selected: 1
                                     face/text: pick face/data face/selected
                                 ]
         return
         schemesize: text "Size" font syswinfnt
-        button "+" 32 [
-                syswinfnt/size: syswinfnt/size + 1
-                apply-scheme
-                upd-scheme
-            ]
-        button "-" 32 [
-                syswinfnt/size: syswinfnt/size - 1
-                apply-scheme
-                upd-scheme
-            ]
+        drop-list data ["10" "11" "12"] on-change [
+                                    syswinfnt/size: to-integer pick face/data face/selected
+
+                                    apply-scheme
+                                    upd-scheme
+                                ]on-create [
+                                    face/selected: 1
+                                    face/text: pick face/data face/selected
+                                ]
         do[upd-scheme]
     ]
 ]

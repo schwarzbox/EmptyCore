@@ -68,6 +68,17 @@ do [
         return i
     ]
 
+    initline: does [
+        linenum: 0
+        panhei: pick size-text codelabel 2
+        linehei: panhei - 4
+        showline
+    ]
+
+    showline: does[
+        flashline/offset: as-pair 0 (panhei + (linenum * linehei))
+    ]
+
     openfile: func [file][
         autosave
         spl: split-path file
