@@ -1,37 +1,5 @@
 ; sourcecode EmptyCore
 
-; invisible constants
-do [
-    newline: "^(line)"
-    askopen: none
-    askfunc: does []
-
-    extralight: 96
-    hiddenfiles: true
-
-    autorun: true
-    showerror: false
-    ; WIP
-    userinput: []
-
-    drawinst: none
-    drawline: false
-    deletepixel: false
-    fillpixel: false
-    defimg: "newimg.png"
-    imgext: [".png" ".jpeg"]
-
-    coredir: %core/
-    make-dir coredir
-    change-dir coredir
-    homedir: to-red-file what-dir
-    navdir: to-red-file what-dir
-    deffile: "newcode.red"
-    defdir: "newcore"
-    codext: [".red" ".reds" ".txt"]
-    codefile: none
-]
-
 sourcecode: [
     origin 0x0 space 1x0
     below
@@ -167,21 +135,24 @@ sourcecode: [
             drawclose: text "▾" 16 center font syswinfnt on-down [
                 clos: closepanel drawpan drawbar face 196x0 196x250
             ]on-over [flashbutton face event]
+
             drawlabel: text "Draw" 48 font syswinfnt
 
-            drawnew: text "⊞" 24 center font syswinfnt extra "new" on-down [
-                        face/font/color: gray
-                    ] on-up [
-                        canvas/draw: []
-                        defimg: ifexist defimg
-                        face/font/color: sysclr
-                    ]
-                on-over [
-                    flashbutton face event
-                ]
+            drawnew: text "⊞" 24 center font syswinfnt extra "new"
+                on-down [
+                    face/font/color: gray
+                ] on-up [
+                    navigation
+                    canvas/draw: copy []
+                    drawmatrix: copy []
+                    defimg: ifexist defimg
+                    face/font/color: sysclr
+                ] on-over [flashbutton face event]
+
             drawsel: text "◰" 24 center font syswinfnt extra "sel"
 
-            drawcell: text "⌗" 24 center font syswinfnt extra "cells" on-down[
+            drawcells: text "⌗" 24 center font syswinfnt extra "cells"
+                on-down[
                     cells/draw: either ((length? cells/draw) > 0)[
                         face/font/color: gray
                         []
@@ -193,14 +164,15 @@ sourcecode: [
 
             drawdel: text "✄" 24 center font syswinfnt extra "del"
                 on-down [
-                    drawinst: face
-                    face/font/color: either deletepixel [
-                        deletepixel: false
+                    face/font/color: either delpixel [
+                        drawinst: none
+                        delpixel: false
                         sysclr
                     ][
                         fillpixel: false
                         drawfill/font/color: sysclr
-                        deletepixel: true
+                        drawinst: face
+                        delpixel: true
                         gray
                     ]
                 ]
@@ -211,6 +183,8 @@ sourcecode: [
                         fillpixel: false
                         sysclr
                     ][
+                        delpixel: false
+                        drawdel/font/color: sysclr
                         fillpixel: true
                         gray
                     ]
@@ -219,43 +193,45 @@ sourcecode: [
 
         drawmachine: panel 196x250 dispclr [
             origin 1x1 space 2x0
-
-            do [setgrid]
             canvas: box 176x224 draw []
+            do [setgrid]
             at 1x1 cells: box 176x224 draw compose/deep/only grid all-over
                 on-down [
                     if (drawinst) [
-                        drawline: true
-                        setpixel canvas event drawcolor
+                        drawline: either fillpixel [false][true]
+                        setpixel canvas event drawbrush drawmatrix
                     ]
                 ]on-up [
                     if (drawinst) [ drawline: false]
                 ]on-over [
                     if (drawinst) [
                         getinput: either (event/away?) [
-                            deletepixel: false
-                            drawdel/font/color: sysclr
                             false
                         ][
                             set-focus canvas
                             true
                         ]
-                        if (drawline) [ setpixel canvas event drawcolor ]
+                        if (drawline) [
+                            setpixel canvas event drawbrush drawmatrix
+                        ]
                     ]
                 ]
 
-            style pxcolor: base 15x15  extra "color" on-down [
-                            drawinst: face
-                            drawcolor/color: face/color
-                            face/color: gray
-
-                        ] on-up [
-                            face/color: drawcolor/color
-                        ]
+            style pxcolor: base 15x15 transparent extra "color"
+                on-down [
+                    drawinst: face
+                    drawbrush/color: face/color
+                    face/color: gray
+                ] on-up [
+                    face/color: drawbrush/color
+                ]
             colors: panel [
                 below
                 origin 0x0 space 0x1
-                drawcolor: box 15x15 "?" transparent center font syswinfnt extra "picker" on-over [
+                drawbrush: box 15x15 "?" transparent center font syswinfnt extra "picker"
+                    on-down[
+                    ; color picker
+                    ] on-over [
                         flashbutton face event
                     ]
                 pxcolor crimson
@@ -275,7 +251,8 @@ sourcecode: [
 
             return
             pad 0x4
-            drawsave: text "↳" 196 center font syswinfnt extra "save" on-down [
+            drawsave: text "↳" 196 center font syswinfnt extra "save"
+                on-down [
                     newimg: make image! reduce [canvas/size transparent]
                     draw newimg compose/deep/only canvas/draw
                     save/as to-red-file defimg newimg 'png

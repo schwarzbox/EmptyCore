@@ -37,27 +37,26 @@ Red [
 ; all var stay forever?
 
 ; 0.4
-
-; improve lines
+; improve lines (mult lines)
 ; rename png in same ext block
+; ctrl z in draw
+; improve draw without delete
 
 ; load and edit
 ; loop color
 
 ; change CLI on area
-
+; focus on list for dir and show created file and dir
 ; add move handlers
 
-; improve fill
 ; selector image
-; save selector
+; save selected
 ; resize image
 ; color picker
 
-
 ; save user setup and load after main setup
 
-; focus on list for dir and show created file and dir
+
 ; func fold button for panels use constants sizes (change sizes with font)
 
 ; 0.5
@@ -66,11 +65,9 @@ Red [
 ; ask input loop pause
 
 ; 0.6
-
 ; theme rtf color for syntax native mezanine
 
 ; project compile
-; final project window
 
 ; v0.6
 ; resize panels
@@ -86,10 +83,6 @@ Red [
 
 system/view/auto-sync?: yes
 
-; constants
-⌘: false
-leftshift: false
-
 ; save View
 ViewRed: get 'View
 ; support function
@@ -104,6 +97,40 @@ maincode: mold sourcecode
 
 ; do read %userset.red
 ; usercode: mold sourcecode
+
+; constants
+⌘: false
+leftshift: false
+
+newline: "^(line)"
+askopen: none
+askfunc: does []
+
+extralight: 96
+hiddenfiles: true
+
+autorun: true
+showerror: false
+; WIP
+userinput: []
+
+drawinst: none
+drawmatrix: []
+drawline: false
+delpixel: false
+fillpixel: false
+defimg: "newimg.png"
+imgext: [".png" ".jpeg"]
+
+coredir: %core/
+make-dir coredir
+change-dir coredir
+homedir: to-red-file what-dir
+navdir: to-red-file what-dir
+deffile: "newcode.red"
+defdir: "newcore"
+codext: [".red" ".reds" ".txt" ".md"]
+codefile: none
 
 backclr: 16.16.16.0
 mainclr: tuple!
@@ -188,7 +215,6 @@ apply-scheme: does  [
     flashlinetop/color: sysclr + 0.0.0.128
     flashlinebot/color: sysclr + 0.0.0.128
 
-
     treedir/font: copy syswinfnt
     treefile/font: copy syswinfnt
     treename/font: copy syswinfnt
@@ -206,10 +232,10 @@ apply-scheme: does  [
 
     drawnew/font: copy syswinfnt
     drawsel/font: copy syswinfnt
-    drawcell/font: copy syswinfnt
+    drawcells/font: copy syswinfnt
     drawdel/font: copy syswinfnt
     drawfill/font: copy syswinfnt
-    drawcolor/font: copy syswinfnt
+    drawbrush/font: copy syswinfnt
     drawsave/font: copy syswinfnt
     setgrid
     updcells
