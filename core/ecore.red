@@ -4,17 +4,12 @@ Red [needs: View]
 View [
 	origin 2x2 space 0x0
 	panel [
-		origin 196x128 space 0x0
+		origin 256x128 space 0x0
 		below
 		t: text 128x32 "EmptyCore" center font-color white react [face/text: f/text]
 		button 128x64 "⚛︎" font-size 32 [
 			insert t/text rejoin [face/text " "]]
-		text 128x32 "v0.36" center font-color white
+		text 128x32 "v0.37" center font-color white
 		f: field 128 center "EmptyCore" on-change [t/text: face/text]
-		button
 	]
 ]
-
-
-
-

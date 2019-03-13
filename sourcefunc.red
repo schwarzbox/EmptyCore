@@ -1,13 +1,18 @@
 ; sourcefunc EmptyCore
 
 do [
-    closepanel: function [txt low high][
-        either txt = "▾" [
-            txt: "▸"
-            return compose [(txt) (low)]
+    closepanel: function [pan bar face low high][
+        result: either face/text = "▾" [
+            face/text: "▸"
+            low
         ][
-            txt: "▾"
-            return compose [(txt) (high)]
+            face/text: "▾"
+            high
+        ]
+        pan/size/y: either (result/y = 0)[
+            bar/size/y
+        ][
+            (bar/size/y + result/y)
         ]
     ]
 
@@ -59,11 +64,11 @@ do [
     shownumbers: does [
         ; error line?
         numbers: split codemill/text newline
-        clear codenumbers/text
+        ; clear codenumbers/text
         i: 0
         foreach stroke numbers [
             i: i + 1
-            append codenumbers/text rejoin [i newline]
+            ; append codenumbers/text rejoin [i newline]
         ]
         return i
     ]
@@ -71,12 +76,18 @@ do [
     initline: does [
         linenum: 0
         panhei: pick size-text codelabel 2
-        linehei: panhei - 4
+        codemilltext: codemill/text
+        codemill/text: "⚛︎"
+        deltasize: 4
+        if (codemill/font/size % 4) = 0 [deltasize: 3]
+        linehei: (pick size-text codemill 2) - deltasize
+        codemill/text: codemilltext
         showline
     ]
 
     showline: does[
-        flashline/offset: as-pair 0 (panhei + (linenum * linehei))
+        flashlinetop/offset: as-pair 0 (panhei + (linenum * linehei))
+        flashlinebot/offset: as-pair 0 (panhei + (linenum * linehei) + linehei)
     ]
 
     openfile: func [file][
@@ -132,6 +143,7 @@ do [
     ]
 
     setname: func [name][
+
         if (name <> none) [
             oldfile: to-red-file treelist/data/:sel
             tmpfile: read oldfile
@@ -162,7 +174,7 @@ do [
             spl: split-path codefile
             if file = spl/2 [
                 clear codemill/text
-                clear codenumbers/text
+                ; clear codenumbers/text
                 clear console/text
                 clear codefilelab/text
                 clear codesavelab/text
@@ -182,14 +194,14 @@ do [
         asktext/text: ""
         askinp/text: ""
         askinp/selected: 1x0
-        treeask/size: 256x0
+        treeask/size: 196x0
         treespace/offset: treespace/offset - 0x64
         navigation
     ]
 
     askuser: func [face txt name /folder /file /rename /del][
         askopen: face
-        treeask/size: 256x64
+        treeask/size: 196x64
         treespace/offset: treespace/offset + 0x64
         asktext/text: copy form txt
         askinp/text: copy form name
@@ -213,9 +225,12 @@ do [
     isfile: func [sel][
         if not dir? to-red-file sel [
             file: copy to-red-file rejoin [navdir sel]
-            if find extensions form suffix? sel [
+            if find codext form suffix? sel [
                 openfile file
                 return true
+            ]
+            if find imgext form suffix? sel [
+
             ]
             if ((first sel) = #".") and ((second sel) <> #".")[
                 openfile file
@@ -264,15 +279,99 @@ do [
         ]
     ]
 
+    setgrid: func [] [
+        grid: [pen (sysclr + 0.0.0.196)
+                            line-width 1
+                            line 0x0 175x0
+                            line 0x0  0x223]
+        horgr: 0x7 loop 28 [
+            append grid compose [line (horgr) (175x0 + horgr)]
+            either ((horgr / 8) % 6 = 0x0) [
+                append grid compose [pen (sysclr + 0.0.0.128)]
+            ][
+                append grid compose [pen (sysclr + 0.0.0.196)]
+            ]
+            horgr: horgr + 0x8
+
+        ]
+        vergr: 7x0 loop 22 [
+            append grid compose [line (0x223 + vergr) (vergr)]
+            either ((vergr / 8) % 6 = 0x0) [
+                append grid compose [pen (sysclr + 0.0.0.128)]
+            ][
+                append grid compose [pen (sysclr + 0.0.0.196)]
+            ]
+            vergr: vergr + 8x0
+        ]
+    ]
+
+    updcells: does [cells/draw: compose/deep/only grid]
+
+    getcolor: function [face ispixel] [
+        if (ispixel) [
+            cellcolor: (index? ispixel) - 4
+            pick face/draw cellcolor
+        ]
+    ]
+
+    rmpixel: function [face ispixel] [
+        if (ispixel) [
+            deletestart: (index? ispixel) - 6
+            remove/part skip face/draw deletestart 7
+        ]
+    ]
+
+    updpixel: function [face ispixel brush pxstart pxsize][
+        rmpixel face ispixel
+        append face/draw compose/deep/only [
+            pen (brush/color) fill-pen (brush/color)
+            box (pxstart) (pxsize)]
+    ]
+
+    colorwave: function [face defclr brush pxstart pxsize pass][
+        if (pxstart < 0x0) or (pxstart > 176x224 ) [print "exit" exit]
+
+        foreach px [0x-8 8x-8 8x0 8x8 0x8 -8x8 -8x0 -8x-8][
+            nextpixel: find face/draw (pxstart + px)
+            curclr: getcolor face nextpixel
+            ; print [(pxstart + px)]
+            if (defclr = curclr) and (not (find pass (pxstart + px))) [
+
+                updpixel face nextpixel brush (pxstart + px) (pxsize + px)
+
+                append pass compose [(pxstart + px)]
+                colorwave face defclr brush (pxstart + px) (pxsize + px) pass
+            ]
+        ]
+    ]
+
+    setpixel: function [face event brush] [
+        pxstart: (event/offset / 8x8) * 8x8
+        pxsize: pxstart + 8x8 - 1
+        ispixel: find face/draw pxstart
+        case [
+            (drawinst/extra = "color") [
+                ; print [length? face/draw]
+                updpixel face ispixel brush pxstart pxsize
+                ; if (fillpixel) [
+                ;     drawline: false
+                ;     defclr: getcolor face ispixel
+                ;     colorwave face defclr brush pxstart pxsize copy []
+                ; ]
+            ]
+            (drawinst/extra = "del") [ rmpixel face ispixel ]
+        ]
+    ]
+
     print: func [argument [default!]][
         append append console/text form reduce argument newline
         return reduce argument
     ]
 
-    prin: func [argument [default!]][
-        append console/text form reduce argument
-        return reduce argument
-    ]
+    ; prin: func [argument [default!]][
+    ;     append console/text form reduce argument
+    ;     return reduce argument
+    ; ]
 
     probe: func [argument [default!]][
         append append console/text form argument newline

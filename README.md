@@ -2,13 +2,13 @@
 
 WIP
 
-v0.36
+v0.37
 
 "EmptyCore" - Experimental LiveCoding Environment
 
 With "EmptyCore" you can see result of the executed code in a real-time.
-You can stop it by pressing ∞ in the Console panel.
-If you stop automatic execution you can see error in the Console.
+You can stop it by pressing ∞ in the Code panel.
+If you stop automatic execution you can see error in the console.
 To run code manually press cmd-b or ↺ in Console panel.
 
 ![Screenshot](screenshot/screenshot1.png)
@@ -17,7 +17,7 @@ You can see source code of the "EmptyCore" and change it on the fly. Be careful.
 
 Function "ask" and "input" not yet implemented.
 
-All variables stay defined until close "EmptyCore". If you define and after comment variable - nothing happen. Variable saved in the memmory.
+All variables stay defined until close "EmptyCore". If you define and after comment variable - nothing happen. Variable saved in the memory.
 
 ![Screenshot](screenshot/screenshot2.png)
 
@@ -29,7 +29,7 @@ To run source code: clone repository, download & install [Red](https://www.red-l
 red EmptyCore.red
 ```
 
-v0.36
+v0.37
 
 - simple file tree
 
@@ -37,27 +37,19 @@ v0.36
 
 - source code viewer/editor
 
-- console output
+- console output (errors)
 
 - VID output
 
-- show errors in console
+- draw machine
 
-- arrow navigation in file tree
+- hotkeys cmd-q: quit cmd-s: save cmd-b: build esc: close dialog window
 
-- fix key word parsing "view" "print" "probe" "prin"
-
-- fix View reactor
-
-- hotkeys cmd-q quit cmd-s save cmd-b build esc close dialog window
+- themes and font panel
 
 v0.4
 
-- font size panel
-
 - save user setting for source code and run after main programm
-
-- draw machine
 
 - close button for file in code editor
 

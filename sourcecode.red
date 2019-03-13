@@ -6,13 +6,20 @@ do [
     askopen: none
     askfunc: does []
 
-    extralight: 64
+    extralight: 96
     hiddenfiles: true
 
     autorun: true
     showerror: false
     ; WIP
     userinput: []
+
+    drawinst: none
+    drawline: false
+    deletepixel: false
+    fillpixel: false
+    defimg: "newimg.png"
+    imgext: [".png" ".jpeg"]
 
     coredir: %core/
     make-dir coredir
@@ -21,7 +28,7 @@ do [
     navdir: to-red-file what-dir
     deffile: "newcode.red"
     defdir: "newcore"
-    extensions: [".red" ".reds" ".txt"]
+    codext: [".red" ".reds" ".txt"]
     codefile: none
 ]
 
@@ -31,14 +38,12 @@ sourcecode: [
     treepan: panel mainclr [
         below
         origin 0x0 space 0x0
-        panel [
+        treebar: panel [
             origin 0x0 space 0x0
             treeclose: text "▾" 16 center font syswinfnt on-down [
-                    clos: closepanel face/text 256x0 256x256
-                    face/text: clos/1
-                    treespace/size: clos/2
+                    closepanel treepan treebar face 196x0 196x211
                 ] on-over [flashbutton face event]
-            treelabel: text "Tree" 48 center font syswinfnt on-up [
+            treelabel: text "Tree" 48 font syswinfnt on-up [
                     face/font/color: sysclr
                     navdir: copy homedir
                     navigation
@@ -57,7 +62,7 @@ sourcecode: [
                     ]
                 ]
 
-            treename: text "✎" 24 center font syswinfnt on-down [
+            treename: text "✏︎" 24 center font syswinfnt on-down [
                     sel: treelist/selected
                     if  (sel <> none) [
                         closemenu face does [
@@ -66,7 +71,7 @@ sourcecode: [
                     ]
                 ]
 
-            treedel: text "✖︎" 24 center font syswinfnt on-up[
+            treedel: text "⌫" 24 center font syswinfnt on-up[
                     sel: treelist/selected
                     if (sel <> none) [
                         closemenu face does [
@@ -75,23 +80,23 @@ sourcecode: [
                     ]
                 ]
 
-            treehide: text ".*" 32 center font syswinfnt on-down [
-                    either hiddenfiles [
+            treehide: text ".*" 24 center font syswinfnt on-down [
+                    face/font/color: either hiddenfiles [
                         hiddenfiles: false
-                        face/font/color: gray
+                        gray
                     ][
                         hiddenfiles: true
-                        face/font/color: sysclr
+                        sysclr
                     ]
                     navigation
                 ]
         ]
 
-        treeask: panel 256x0 mainclr [
+        treeask: panel 196x0 mainclr [
             origin 0x0 space 0x4
             below
-            asktext: text "" 256 center font syswinfnt
-            askinp: area 256x16 "" center dispclr no-border font syswinfnt
+            asktext: text "" 196 center font syswinfnt
+            askinp: area 196x16 "" center dispclr no-border font syswinfnt
                 on-key-down[
                     if event/key = 13 [
                         askfunc
@@ -100,17 +105,17 @@ sourcecode: [
                     ]
                     if event/key = 27 [askclose]
                 ]
-                yesbut: text "↳" 256 center font syswinfnt on-up [
+                yesbut: text "↳" 196 center font syswinfnt on-up [
                         face/font/color: sysclr
                         askfunc
                     ] on-down [face/font/color: gray
                     ] on-over [flashbutton face event]
         ]
 
-        treespace: panel 256x256 dispclr [
+        treespace: panel 196x211 dispclr [
             origin 0x0 space 0x1
             below
-            treecli: field 256x16 no-border on-change [
+            treecli: field 196x16 no-border on-change [
                 unless find face/text ">" [append face/text ">"]
                 treecom
             ] on-key-down[
@@ -128,7 +133,7 @@ sourcecode: [
                 ]
             ]
 
-            treelist: text-list 256x240 data [] no-border on-change [
+            treelist: text-list 196x195 data [] no-border on-change [
                 sel: pick face/data face/selected
                 if sel [
                     isfile sel
@@ -152,55 +157,179 @@ sourcecode: [
             ]
         ]on-create [navigation]
     ] loose
+
+
     drawpan: panel mainclr [
         below
         origin 0x0 space 0x0
-        panel [
+        drawbar: panel [
             origin 0x0 space 0x0
             drawclose: text "▾" 16 center font syswinfnt on-down [
-                clos: closepanel face/text 256x0 256x256
-                face/text: clos/1
-                drawmachine/size: clos/2
+                clos: closepanel drawpan drawbar face 196x0 196x250
             ]on-over [flashbutton face event]
-            drawlabel: text "DrawMachine" font syswinfnt
+            drawlabel: text "Draw" 48 font syswinfnt
+
+            drawnew: text "⊞" 24 center font syswinfnt extra "new" on-down [
+                        face/font/color: gray
+                    ] on-up [
+                        canvas/draw: []
+                        defimg: ifexist defimg
+                        face/font/color: sysclr
+                    ]
+                on-over [
+                    flashbutton face event
+                ]
+            drawsel: text "◰" 24 center font syswinfnt extra "sel"
+
+            drawcell: text "⌗" 24 center font syswinfnt extra "cells" on-down[
+                    cells/draw: either ((length? cells/draw) > 0)[
+                        face/font/color: gray
+                        []
+                    ][
+                        face/font/color: sysclr
+                        updcells
+                    ]
+                ]
+
+            drawdel: text "✄" 24 center font syswinfnt extra "del"
+                on-down [
+                    drawinst: face
+                    face/font/color: either deletepixel [
+                        deletepixel: false
+                        sysclr
+                    ][
+                        fillpixel: false
+                        drawfill/font/color: sysclr
+                        deletepixel: true
+                        gray
+                    ]
+                ]
+
+            drawfill: text "▣" 24 center font syswinfnt
+                on-down [
+                    face/font/color: either fillpixel [
+                        fillpixel: false
+                        sysclr
+                    ][
+                        fillpixel: true
+                        gray
+                    ]
+                ]
         ]
-        drawmachine: panel 256x256 dispclr
+
+        drawmachine: panel 196x250 dispclr [
+            origin 1x1 space 2x0
+
+            do [setgrid]
+            canvas: box 176x224 draw []
+            at 1x1 cells: box 176x224 draw compose/deep/only grid all-over
+                on-down [
+                    if (drawinst) [
+                        drawline: true
+                        setpixel canvas event drawcolor
+                    ]
+                ]on-up [
+                    if (drawinst) [ drawline: false]
+                ]on-over [
+                    if (drawinst) [
+                        getinput: either (event/away?) [
+                            deletepixel: false
+                            drawdel/font/color: sysclr
+                            false
+                        ][
+                            set-focus canvas
+                            true
+                        ]
+                        if (drawline) [ setpixel canvas event drawcolor ]
+                    ]
+                ]
+
+            style pxcolor: base 15x15  extra "color" on-down [
+                            drawinst: face
+                            drawcolor/color: face/color
+                            face/color: gray
+
+                        ] on-up [
+                            face/color: drawcolor/color
+                        ]
+            colors: panel [
+                below
+                origin 0x0 space 0x1
+                drawcolor: box 15x15 "?" transparent center font syswinfnt extra "picker" on-over [
+                        flashbutton face event
+                    ]
+                pxcolor crimson
+                pxcolor orange
+                pxcolor leaf
+                pxcolor khaki
+                pxcolor navy
+                pxcolor teal
+                pxcolor sky
+                pxcolor pink
+                pxcolor gold
+                pxcolor brown
+                pxcolor gray
+                pxcolor black
+                pxcolor white
+            ]
+
+            return
+            pad 0x4
+            drawsave: text "↳" 196 center font syswinfnt extra "save" on-down [
+                    newimg: make image! reduce [canvas/size transparent]
+                    draw newimg compose/deep/only canvas/draw
+                    save/as to-red-file defimg newimg 'png
+                    navigation
+                ]
+                on-over [
+                    flashbutton face event
+                ]
+        ]
     ] loose
     return
 
-    style display: area dispclr wrap font codefnt no-border
-    style terminal: area dispclr wrap font consfnt no-border
-    style numbar: area dispclr font codefnt font-color gray no-border
+    style display: area 602x400 dispclr wrap font codefnt no-border
+    style terminal: area 602x78 dispclr wrap font consfnt no-border
+    style numbar: area 41x370 dispclr font codefnt font-color gray no-border
 
-    codepan: panel mainclr [
+    codepan: panel mainclr[
         below
-        origin 0x0 space 1x0
-        panel [
+        origin 0x0 space 1x1
+        codebar: panel [
             origin 0x0 space 0x0
             codeclose: text "▾" 16 center font syswinfnt on-down [
-                either face/text = "▾" [
-                    face/text: "▸"
-                    codemill/size: 598x0
-                    codenumbers/size: 41x0
-                ][
-                    face/text: "▾"
-                    codemill/size: 598x370
-                    codenumbers/size: 41x370
-                ]
+                closepanel codepan codebar face 602x0 602x480
             ]on-over [flashbutton face event]
 
             do [getinput: false]
-            codelabel: text "CodeMill" font syswinfnt
+            codelabel: text "Code" 48 font syswinfnt
+
+            consolereset: text "↺" 24 center font syswinfnt on-up [
+                face/font/color: sysclr
+                build
+            ]on-down [face/font/color: gray
+            ]on-over [flashbutton face event]
+            consoleloop: text "∞" 24 font syswinfnt on-down[
+                face/font/color: either autorun [
+                    autorun: false
+                    showerror: true
+                    gray
+                ][
+                    autorun: true
+                    showerror: false
+                    sysclr
+                ]
+            ]
             codesavelab: text "" 24 font syswinfnt
 
-            codefilelab: text "" 256 font codefnt font-color gray
+            codefilelab: text "" 256 font syswinfnt font-color gray
         ]
 
         across
-        codenumbers: numbar "" right 41x370 disabled on-focus [
-            set-focus codemill]
+        ; codenumbers: numbar "" right disabled on-focus [
+        ;     set-focus codemill]
 
-        codemill: display "" 598x370 focus font-color codeclr
+        codemill: display "" focus font-color codeclr
             on-change [
                 oldlines: codelines
 
@@ -218,9 +347,12 @@ sourcecode: [
                 mousepos: event/offset
                 codelines: shownumbers
                 linenum: (mousepos/y / linehei)
+                ; print [linenum codelines]
                 if linenum >= (codelines) [
                     linenum: codelines - 1
                 ]
+                ; print linenum
+
                 showline
             ]on-key-down[
                 if (not codefile) [setfile deffile]
@@ -232,7 +364,14 @@ sourcecode: [
                         showline
                     ]
                 ]
-                if event/key = 13 [ linenum: linenum + 1
+                if event/key = 13 [
+                    linenum: linenum + 1
+                    showline
+                ]
+                deltalines: oldlines - codelines
+                if (deltalines > 0) [
+                    oldlines: codelines
+                    linenum: linenum - deltalines
                     showline
                 ]
             ]on-key-up[
@@ -249,41 +388,18 @@ sourcecode: [
             ]on-create [
                 codefile: none
                 initline
+
                 codelines: shownumbers
                 oldlines: codelines
             ]
         return
 
-        at 0x0 flashline: base 41x16 with [color: sysclr + 0.0.0.222] on-focus [set-focus codemill]
-
+        at 0x0 flashlinetop: base 0x0 with [ size: as-pair codemill/size/x 1
+                                        color: sysclr + 0.0.0.128]
+        at 0x0 flashlinebot: base 0x0 with [ size: as-pair codemill/size/x 1
+                                        color: sysclr + 0.0.0.128]
         below
-        consolepan: panel mainclr [
-            origin 0x0 space 0x0
-            consoleclose: text "▾" 16 center font syswinfnt on-down [
-                clos: closepanel face/text 640x0 640x104
-                face/text: clos/1
-                console/size: clos/2
-            ]on-over [flashbutton face event]
-            consolelabel: text "Console" font syswinfnt
-            consolereset: text "↺" 24 center font syswinfnt on-up [
-                face/font/color: sysclr
-                build
-            ]on-down [face/font/color: gray
-            ]on-over [flashbutton face event]
-            consolebut: text "∞" 24 font syswinfnt on-down[
-                face/font/color: either autorun [
-                    autorun: false
-                    showerror: true
-                    gray
-                ][
-                    autorun: true
-                    showerror: false
-                    sysclr
-                ]
-            ]
-        ]
-
-        console: terminal "" 640x104 font-color codeclr on-key-down[
+        console: terminal "" font-color codeclr on-key-down[
             ; enter 13
             if event/key = 13 [
                 userinput: copy []
@@ -298,16 +414,14 @@ sourcecode: [
     viewpan: panel mainclr [
         below
         origin 0x0 space 0x0
-        panel [
+        viewbar: panel [
             origin 0x0 space 0x0
             viewclose: text "▾" 16 center font syswinfnt on-down [
-                clos: closepanel face/text 512x0 512x512
-                face/text: clos/1
-                viewengine/size: clos/2
+                closepanel viewpan viewbar face 640x0 640x480
             ]on-over [flashbutton face event]
-            viewlabel: text "ViewEngine" font syswinfnt
+            viewlabel: text "View" font syswinfnt
         ]
-        viewengine: panel 512x512 dispclr
+        viewengine: panel 640x480 dispclr
     ] loose
     return
 ]
