@@ -37,22 +37,29 @@ Red [
 ; all var stay forever?
 
 ; 0.4
-; improve lines (mult lines)
-; rename png in same ext block
-; ctrl z in draw
-; improve draw without delete
 
-; load and edit
-; loop color
 
-; change CLI on area
-; focus on list for dir and show created file and dir
-; add move handlers
+; color picker
+; ctrl z in draw or history
+; read problem when rename
+; open problem
+
+; auto rotate or bigger canvas and zoom
+; imporve grid magic numbers
+
 
 ; selector image
 ; save selected
 ; resize image
-; color picker
+
+; move in view affect on code
+; zoom view and use diff canvas
+
+; improve lines (multi lines)
+
+; change CLI on area
+; focus on list for dir and show created file and dir
+; add move handlers
 
 ; save user setup and load after main setup
 
@@ -121,6 +128,7 @@ delpixel: false
 fillpixel: false
 defimg: "newimg.png"
 imgext: [".png" ".jpeg"]
+pxsize: 8x8
 
 coredir: %core/
 make-dir coredir

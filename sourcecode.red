@@ -145,7 +145,6 @@ sourcecode: [
                     navigation
                     canvas/draw: copy []
                     drawmatrix: copy []
-                    defimg: ifexist defimg
                     face/font/color: sysclr
                 ] on-over [flashbutton face event]
 
@@ -169,8 +168,7 @@ sourcecode: [
                         delpixel: false
                         sysclr
                     ][
-                        fillpixel: false
-                        drawfill/font/color: sysclr
+                        fillpixel: tooloff drawfill
                         drawinst: face
                         delpixel: true
                         gray
@@ -183,8 +181,8 @@ sourcecode: [
                         fillpixel: false
                         sysclr
                     ][
-                        delpixel: false
-                        drawdel/font/color: sysclr
+                        drawinst: drawbrush
+                        delpixel: tooloff drawdel
                         fillpixel: true
                         gray
                     ]
@@ -224,16 +222,17 @@ sourcecode: [
                     face/color: gray
                 ] on-up [
                     face/color: drawbrush/color
+                    delpixel: tooloff drawdel
                 ]
             colors: panel [
                 below
                 origin 0x0 space 0x1
-                drawbrush: box 15x15 "?" transparent center font syswinfnt extra "picker"
+                drawbrush: pxcolor "?" center font syswinfnt extra "picker"
                     on-down[
-                    ; color picker
-                    ] on-over [
-                        flashbutton face event
-                    ]
+                        face/font/color: gray
+                    ] on-up[
+                        face/font/color: sysclr
+                    ] on-over [flashbutton face event]
                 pxcolor crimson
                 pxcolor orange
                 pxcolor leaf
@@ -255,7 +254,8 @@ sourcecode: [
                 on-down [
                     newimg: make image! reduce [canvas/size transparent]
                     draw newimg compose/deep/only canvas/draw
-                    save/as to-red-file defimg newimg 'png
+                    file: ifexist defimg
+                    save/as to-red-file file newimg 'png
                     navigation
                 ]
                 on-over [

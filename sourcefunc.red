@@ -142,19 +142,29 @@ setfile: func [name] [
 ]
 
 setname: func [name][
-
     if (name <> none) [
-        oldfile: to-red-file treelist/data/:sel
-        tmpfile: read oldfile
-        either isfile oldfile [
-            rmrf oldfile
-            file: either find name "." [name][rejoin [name ".red"]]
-            file: ifexist file
-            write to-red-file file tmpfile
-            openfile file
-        ][
-            rmrf oldfile
-            make-dir to-red-file dirize name
+        old: to-red-file treelist/data/:sel
+        fileold: isfile old
+        case [
+            fileold  = "code" [
+                tmpfile: read old
+                rmrf old
+                file: either find name "." [name][rejoin [name ".red"]]
+                file: ifexist file
+                write to-red-file file tmpfile
+                openfile file
+            ]
+            fileold  = "img"[
+                tmpfile: read/binary old
+                rmrf old
+                file: either find name "." [name][rejoin [name ".png"]]
+                file: ifexist file
+                write/binary to-red-file file tmpfile
+            ]
+            fileold = "dir" [
+                rmrf old
+                make-dir to-red-file dirize name
+            ]
         ]
         navigation
         set-focus codemill
@@ -227,23 +237,25 @@ isfile: func [sel] [
         file: copy to-red-file rejoin [navdir sel]
         if find codext form suffix? sel [
             openfile file
-            true
         ]
         if find imgext form suffix? sel [
 
+            drawmatrix: copy []
+            loadimage drawmatrix sel pxsize
+
+            drawpixels canvas drawmatrix
+            return "img"
         ]
         fileexist: ((find (sort read navdir) sel) <> none)
         if ((first sel) = #".") and ((second sel) <> #".") and fileexist [
             openfile file
-            true
         ]
         if ((find sel #".") = none) and fileexist [
             openfile file
-            true
         ]
-        false
+        return "code"
     ]
-    false
+    return "dir"
 ]
 
 isback: func [sel] [
@@ -254,7 +266,6 @@ isback: func [sel] [
             navdir: to-red-file get-current-dir
             navigation
         ]
-
     ]
 ]
 
@@ -285,53 +296,74 @@ setgrid: func [] [
                         line-width 1
                         line 0x0 175x0
                         line 0x0  0x223]
-    horgr: 0x7 loop 28 [
-        append grid compose [line (horgr) (175x0 + horgr)]
-        either ((horgr / 8) % 6 = 0x0) [
+    horline: 0x7 loop 28 [
+        append grid compose [line (horline) (175x0 + horline)]
+        either ((horline / 8) % 6 = 0x0) [
             append grid compose [pen (sysclr + 0.0.0.128)]
         ][
             append grid compose [pen (sysclr + 0.0.0.196)]
         ]
-        horgr: horgr + 0x8
+        horline: horline + 0x8
 
     ]
-    vergr: 7x0 loop 22 [
-        append grid compose [line (0x223 + vergr) (vergr)]
-        either ((vergr / 8) % 6 = 0x0) [
+    verline: 7x0 loop 22 [
+        append grid compose [line (0x223 + verline) (verline)]
+        either ((verline / 8) % 6 = 0x0) [
             append grid compose [pen (sysclr + 0.0.0.128)]
         ][
             append grid compose [pen (sysclr + 0.0.0.196)]
         ]
-        vergr: vergr + 8x0
+        verline: verline + 8x0
+    ]
+]
+
+loadimage: function [drawmatrix sel px] [
+    loadimg: load sel
+    y: 0
+    while [y < loadimg/size/y][
+        x: 0
+        while [x < loadimg/size/x] [
+            index: x + (y * loadimg/size/x) + 1
+            clr: loadimg/:index
+            st: ((as-pair x y) * pxsize/x) / pxsize/y
+            sz: (st + pxsize) - 1
+            append drawmatrix compose [(st) (sz) (clr)]
+            x: x + pxsize/x
+        ]
+        y: y + pxsize/y
     ]
 ]
 
 updcells: does [cells/draw: compose/deep/only grid]
 
-
-getcolor: function [drawmatrix ispixel] [
-    if (ispixel) [
-        cellcolor: (index? ispixel) + 2
+getcolor: function [drawmatrix pixel] [
+    if (pixel) [
+        cellcolor: (index? pixel) + 2
         pick drawmatrix cellcolor
     ]
 ]
 
-rmpixel: function [drawmatrix ispixel] [
-    if (ispixel) [
-        delstart: (index? ispixel) - 1
+rmpixel: function [drawmatrix pixel] [
+    if (pixel) [
+        delstart: (index? pixel) - 1
         remove/part skip drawmatrix delstart 3
     ]
 ]
 
-updpixel: function [drawmatrix ispixel brush pxstart pxsize][
-    rmpixel drawmatrix ispixel
-    ; either (ispixel) [
-    ;     repstart: (index? ispixel) + 2
+updpixel: function [drawmatrix pixel brush pxstart pxsize][
+    rmpixel drawmatrix pixel
+    ; either (pixel) [
+    ;     repstart: (index? pixel) + 2
     ;     remove at drawmatrix repstart
     ;     insert at drawmatrix repstart brush/color
     ; ][
         append drawmatrix compose [(pxstart) (pxsize) (brush/color)]
     ; ]
+]
+
+tooloff: function [face][
+    face/font/color: sysclr
+    false
 ]
 
 closepixels: function [drawmatrix defclr brush pxstart pxsize pass][
@@ -359,25 +391,30 @@ fillwave: function [drawmatrix defclr brush pxstart pxsize][
         take pass
         i: i + 1
     ]
-    print i
-    print ["pass" length? pass]
 ]
 
 setpixel: function [face event brush drawmatrix] [
     pxstart: (event/offset / 8x8) * 8x8
     pxsize: pxstart + 8x8 - 1
-    ispixel: find drawmatrix pxstart
-    defclr: getcolor drawmatrix ispixel
+    pixel: find drawmatrix pxstart
+    defclr: getcolor drawmatrix pixel
     case [
-        (drawinst/extra = "color") [
-            updpixel drawmatrix ispixel brush pxstart pxsize
-            if (fillpixel) [
-                fillwave drawmatrix defclr brush pxstart pxsize
+        (drawinst/extra = "color") or (drawinst/extra = "picker") [
+            if (defclr <> brush/color) [
+                updpixel drawmatrix pixel brush pxstart pxsize
+                if (fillpixel) [
+                    fillwave drawmatrix defclr brush pxstart pxsize
+                ]
             ]
         ]
-        (drawinst/extra = "del") [ rmpixel drawmatrix ispixel]
+        (drawinst/extra = "del") [ rmpixel drawmatrix pixel]
     ]
-    canvas: copy []
+    drawpixels face drawmatrix
+]
+
+drawpixels: function [face drawmatrix] [
+    print [drawmatrix/3 drawmatrix/6]
+    face/draw: copy []
     drawcom: copy []
     foreach [st sz clr] drawmatrix [
         append drawcom compose [pen (clr) fill-pen (clr) box (st) (sz)]
