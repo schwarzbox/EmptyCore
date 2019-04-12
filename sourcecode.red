@@ -136,19 +136,51 @@ sourcecode: [
                 clos: closepanel drawpan drawbar face 196x0 196x250
             ]on-over [flashbutton face event]
 
-            drawlabel: text "Draw" 48 font syswinfnt
-
-            drawnew: text "⊞" 24 center font syswinfnt extra "new"
+            drawlabel: text "Draw" 48 font syswinfnt extra "new"
                 on-down [
                     face/font/color: gray
                 ] on-up [
-                    navigation
-                    canvas/draw: copy []
-                    drawmatrix: copy []
+                    newimage
                     face/font/color: sysclr
                 ] on-over [flashbutton face event]
 
-            drawsel: text "◰" 24 center font syswinfnt extra "sel"
+
+            drawcrop: text "◰" 24 center font syswinfnt extra "crop"
+
+            drawrot: text "↻" 24 center font syswinfnt extra "rot"
+                on-down [
+                    face/font/color: gray
+                ] on-up [
+                    rotateimage canvas
+                    face/font/color: sysclr
+                ] on-over [flashbutton face event]
+
+            drawdel: text "✄" 24 center font syswinfnt extra "del"
+                on-down [
+                    face/font/color: either delpixel [
+                        drawinst: none
+                        delpixel: false
+                        sysclr
+                    ][
+                        fillpixels: tooloff drawfill
+                        drawinst: face
+                        delpixel: true
+                        gray
+                    ]
+                ]
+
+            drawfill: text "▣" 24 center font syswinfnt
+                on-down [
+                    face/font/color: either fillpixels [
+                        fillpixels: false
+                        sysclr
+                    ][
+                        drawinst: drawbrush
+                        delpixel: tooloff drawdel
+                        fillpixels: true
+                        gray
+                    ]
+                ]
 
             drawcells: text "⌗" 24 center font syswinfnt extra "cells"
                 on-down[
@@ -160,43 +192,16 @@ sourcecode: [
                         updcells
                     ]
                 ]
-
-            drawdel: text "✄" 24 center font syswinfnt extra "del"
-                on-down [
-                    face/font/color: either delpixel [
-                        drawinst: none
-                        delpixel: false
-                        sysclr
-                    ][
-                        fillpixel: tooloff drawfill
-                        drawinst: face
-                        delpixel: true
-                        gray
-                    ]
-                ]
-
-            drawfill: text "▣" 24 center font syswinfnt
-                on-down [
-                    face/font/color: either fillpixel [
-                        fillpixel: false
-                        sysclr
-                    ][
-                        drawinst: drawbrush
-                        delpixel: tooloff drawdel
-                        fillpixel: true
-                        gray
-                    ]
-                ]
         ]
 
         drawmachine: panel 196x250 dispclr [
-            origin 1x1 space 2x0
-            canvas: box 176x224 draw []
+            origin 2x2 space 1x1
+            canvas: box cansize draw []
             do [setgrid]
-            at 1x1 cells: box 176x224 draw compose/deep/only grid all-over
+            at 2x2 cells: box cansize draw compose/deep/only grid all-over
                 on-down [
                     if (drawinst) [
-                        drawline: either fillpixel [false][true]
+                        drawline: either fillpixels [false][true]
                         setpixel canvas event drawbrush drawmatrix
                     ]
                 ]on-up [
@@ -214,7 +219,7 @@ sourcecode: [
                         ]
                     ]
                 ]
-
+            return
             style pxcolor: base 15x15 transparent extra "color"
                 on-down [
                     drawinst: face
@@ -224,44 +229,57 @@ sourcecode: [
                     face/color: drawbrush/color
                     delpixel: tooloff drawdel
                 ]
+            style picker: pxcolor "□" center font syswinfnt
+                on-down [
+                    ; drawinst: face
+                    ; drawbrush/color: face/color
+                    ; face/color: gray
+                ] on-up [
+                    ; face/color: drawbrush/color
+                    ; delpixel: tooloff drawdel
+                ]
             colors: panel [
-                below
-                origin 0x0 space 0x1
-                drawbrush: pxcolor "?" center font syswinfnt extra "picker"
-                    on-down[
-                        face/font/color: gray
-                    ] on-up[
-                        face/font/color: sysclr
-                    ] on-over [flashbutton face event]
+                across
+                origin 0x0 space 1x1
+                drawbrush: base 15x15 transparent "☄︎" center font syswinfnt extra "brush"
+                drawpicker1: picker
+                drawpicker2: picker
+
                 pxcolor crimson
+                pxcolor brick
                 pxcolor orange
                 pxcolor leaf
-                pxcolor khaki
-                pxcolor navy
                 pxcolor teal
+                pxcolor mint
+                pxcolor navy
+                pxcolor reblue
+                pxcolor aqua
+
+                return
+                pxcolor purple
                 pxcolor sky
                 pxcolor pink
                 pxcolor gold
                 pxcolor brown
+                pxcolor sienna
+                pxcolor olive
+                pxcolor silver
                 pxcolor gray
+                pxcolor coal
                 pxcolor black
                 pxcolor white
             ]
 
             return
-            pad 0x4
+            pad 0x2
             drawsave: text "↳" 196 center font syswinfnt extra "save"
                 on-down [
-                    newimg: make image! reduce [canvas/size transparent]
-                    draw newimg compose/deep/only canvas/draw
-                    file: ifexist defimg
-                    save/as to-red-file file newimg 'png
-                    navigation
+                    saveimage defimg
                 ]
                 on-over [
                     flashbutton face event
                 ]
-        ]
+        ] on-create [newimage]
     ] loose
     return
 
@@ -281,7 +299,7 @@ sourcecode: [
             do [getinput: false]
             codelabel: text "Code" 48 font syswinfnt
 
-            consolereset: text "↺" 24 center font syswinfnt on-up [
+            consolereset: text "➡︎" 24 center font syswinfnt on-up [
                 face/font/color: sysclr
                 build
             ]on-down [face/font/color: gray
@@ -329,7 +347,6 @@ sourcecode: [
                     linenum: codelines - 1
                 ]
                 ; print linenum
-
                 showline
             ]on-key-down[
                 if (not codefile) [setfile deffile]

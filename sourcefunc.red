@@ -112,9 +112,16 @@ ifexist: func [file] [
     ]
     num: ""
     i: 1
+
+    filedir: []
     foreach fl sort read navdir [
         if find fl "/" [take/last fl]
-        if fl = file [num: form i i: i + 1]
+        append filedir fl
+    ]
+
+    while [(find filedir to-red-file file)] [
+        num: form i
+        i: i + 1
         file: rejoin [name num ext]
     ]
     file: to-red-file rejoin [what-dir file]
@@ -153,6 +160,7 @@ setname: func [name][
                 file: ifexist file
                 write to-red-file file tmpfile
                 openfile file
+                set-focus codemill
             ]
             fileold  = "img"[
                 tmpfile: read/binary old
@@ -167,7 +175,6 @@ setname: func [name][
             ]
         ]
         navigation
-        set-focus codemill
     ]
 ]
 
@@ -235,15 +242,12 @@ askuser: func [face txt name /folder /file /rename /del][
 isfile: func [sel] [
     if not dir? to-red-file sel [
         file: copy to-red-file rejoin [navdir sel]
+
         if find codext form suffix? sel [
             openfile file
         ]
         if find imgext form suffix? sel [
-
-            drawmatrix: copy []
-            loadimage drawmatrix sel pxsize
-
-            drawpixels canvas drawmatrix
+            loadimage file
             return "img"
         ]
         fileexist: ((find (sort read navdir) sel) <> none)
@@ -292,23 +296,19 @@ treecom: does [
 ]
 
 setgrid: func [] [
-    grid: [pen (sysclr + 0.0.0.196)
-                        line-width 1
-                        line 0x0 175x0
-                        line 0x0  0x223]
-    horline: 0x7 loop 28 [
-        append grid compose [line (horline) (175x0 + horline)]
-        either ((horline / 8) % 6 = 0x0) [
+    grid: [pen (sysclr + 0.0.0.196) line-width 1]
+    horline: 0x7 loop 24 [
+        append grid compose [line (horline) (191x0 + horline)]
+        either ((horline / 8) % 5 = 0x0) [
             append grid compose [pen (sysclr + 0.0.0.128)]
         ][
             append grid compose [pen (sysclr + 0.0.0.196)]
         ]
         horline: horline + 0x8
-
     ]
-    verline: 7x0 loop 22 [
-        append grid compose [line (0x223 + verline) (verline)]
-        either ((verline / 8) % 6 = 0x0) [
+    verline: 7x0 loop 24 [
+        append grid compose [line (0x191 + verline) (verline)]
+        either ((verline / 8) % 5 = 0x0) [
             append grid compose [pen (sysclr + 0.0.0.128)]
         ][
             append grid compose [pen (sysclr + 0.0.0.196)]
@@ -317,15 +317,48 @@ setgrid: func [] [
     ]
 ]
 
-loadimage: function [drawmatrix sel px] [
-    loadimg: load sel
+newimage: does [
+    if (length? drawmatrix) > 0 [saveimage defimg]
+    newimg: make image! reduce [canvas/size transparent]
+    fillmatrix newimg
+    drawpixels drawmatrix canvas
+]
+
+loadimage: func[file] [
+    newimg: make image! reduce [canvas/size transparent]
+    loadimg: load file
+    draw newimg compose/deep/only [image (loadimg)]
+    fillmatrix newimg
+    drawpixels drawmatrix canvas
+]
+
+rotateimage: func[canvas] [
+    newimg: make image! reduce [canvas/size transparent]
+    draw newimg compose/deep/only canvas/draw
+    rotimg: make image! reduce [canvas/size transparent]
+    draw rotimg  compose/deep/only [rotate 90 (canvas/size / 2) image (newimg)]
+    fillmatrix rotimg
+    drawpixels drawmatrix canvas
+]
+
+saveimage: func [defimg][
+    newimg: make image! reduce [canvas/size transparent]
+    draw newimg compose/deep/only canvas/draw
+    file: ifexist defimg
+    save/as to-red-file file newimg 'png
+    navigation
+]
+
+fillmatrix: func[img][
+    drawmatrix: copy[]
     y: 0
-    while [y < loadimg/size/y][
+    while [y < img/size/y][
         x: 0
-        while [x < loadimg/size/x] [
-            index: x + (y * loadimg/size/x) + 1
-            clr: loadimg/:index
-            st: ((as-pair x y) * pxsize/x) / pxsize/y
+        while [x < img/size/x] [
+            ; take color in center
+            index: x + (y * img/size/x) + (pxsize/x / 2)
+            clr: img/:index
+            st: ((as-pair x y) * pxsize) / pxsize
             sz: (st + pxsize) - 1
             append drawmatrix compose [(st) (sz) (clr)]
             x: x + pxsize/x
@@ -350,15 +383,9 @@ rmpixel: function [drawmatrix pixel] [
     ]
 ]
 
-updpixel: function [drawmatrix pixel brush pxstart pxsize][
+updpixel: function [drawmatrix pixel color pxstart pxsize][
     rmpixel drawmatrix pixel
-    ; either (pixel) [
-    ;     repstart: (index? pixel) + 2
-    ;     remove at drawmatrix repstart
-    ;     insert at drawmatrix repstart brush/color
-    ; ][
-        append drawmatrix compose [(pxstart) (pxsize) (brush/color)]
-    ; ]
+    append drawmatrix compose [(pxstart) (pxsize) (color)]
 ]
 
 tooloff: function [face][
@@ -366,60 +393,62 @@ tooloff: function [face][
     false
 ]
 
-closepixels: function [drawmatrix defclr brush pxstart pxsize pass][
+closepixels: function [drawmatrix defclr color pxstart pxfin pass][
     foreach px [0x-8 8x-8 8x0 8x8 0x8 -8x8 -8x0 -8x-8][
         pixst: pxstart + px
-        pixsz: pxsize + px
-        if (pixst/x < 0) or (pxsize/x > 176) [continue]
-        if (pixst/y < 0) or (pxsize/y > 224) [continue]
+        pixsz: pxfin + px
+        if (pixst/x < 0) or (pxfin/x > 256) [continue]
+        if (pixst/y < 0) or (pxfin/y > 256) [continue]
         if (find/only pass compose [(pixst) (pixsz)]) [continue]
 
         nextpixel: find drawmatrix pixst
         curclr: getcolor drawmatrix nextpixel
         if (defclr = curclr) [
-            updpixel drawmatrix nextpixel brush pixst pixsz
+            updpixel drawmatrix nextpixel color pixst pixsz
             append pass compose/deep [[(pixst) (pixsz)]]
         ]
     ]
 ]
 
-fillwave: function [drawmatrix defclr brush pxstart pxsize][
-    pass: copy compose/deep [[(pxstart) (pxsize)]]
+fillwave: function [drawmatrix defclr color pxstart pxfin][
+    pass: copy compose/deep [[(pxstart) (pxfin)]]
     i: 0
     while [(length? pass) > 0][
-        closepixels drawmatrix defclr brush pass/1/1 pass/1/2 pass
+        closepixels drawmatrix defclr color pass/1/1 pass/1/2 pass
         take pass
         i: i + 1
     ]
 ]
 
-setpixel: function [face event brush drawmatrix] [
+setpixel: function [canvas event brush drawmatrix] [
     pxstart: (event/offset / 8x8) * 8x8
-    pxsize: pxstart + 8x8 - 1
+    pxfin: pxstart + 8x8 - 1
     pixel: find drawmatrix pxstart
     defclr: getcolor drawmatrix pixel
     case [
         (drawinst/extra = "color") or (drawinst/extra = "picker") [
             if (defclr <> brush/color) [
-                updpixel drawmatrix pixel brush pxstart pxsize
-                if (fillpixel) [
-                    fillwave drawmatrix defclr brush pxstart pxsize
+                updpixel drawmatrix pixel brush/color pxstart pxfin
+                if (fillpixels) [
+                    fillwave drawmatrix defclr brush/color pxstart pxfin
                 ]
             ]
         ]
-        (drawinst/extra = "del") [ rmpixel drawmatrix pixel]
+        (drawinst/extra = "del") [
+            updpixel drawmatrix pixel transparent pxstart pxfin
+        ]
     ]
-    drawpixels face drawmatrix
+    drawpixels drawmatrix canvas
 ]
 
-drawpixels: function [face drawmatrix] [
-    print [drawmatrix/3 drawmatrix/6]
-    face/draw: copy []
+drawpixels: function [drawmatrix canvas] [
+    canvas/draw: copy []
     drawcom: copy []
+
     foreach [st sz clr] drawmatrix [
         append drawcom compose [pen (clr) fill-pen (clr) box (st) (sz)]
     ]
-    face/draw: drawcom
+    append/only canvas/draw drawcom
 ]
 
 print: func [argument [default!]][

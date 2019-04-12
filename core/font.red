@@ -1,7 +1,7 @@
 #!/usr/bin/env red
 Red [Needs: View]
 
+mainclr: forest
+apply-scheme
 
-View [
-	image %newimg.png loose
-]
+

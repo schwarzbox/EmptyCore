@@ -33,29 +33,22 @@ Red [
     License: "MIT"
     Needs: View
 ]
-; 🧩 ⚙️  ▦□ ⧈ ◱ ◰ ⧉ ⸬ ▨ ⬚ 𖣯▦⊞
+; 🧩 ⚙️  ▦□ ⧈ ◱ ◰ ⧉  ▨ ⃞   ꙮ     𖣯▦⊞➲
 ; all var stay forever?
 
 ; 0.4
 
-
 ; color picker
 ; ctrl z in draw or history
-; read problem when rename
-; open problem
 
-; auto rotate or bigger canvas and zoom
 ; imporve grid magic numbers
 
+; crop
 
-; selector image
-; save selected
-; resize image
-
-; move in view affect on code
 ; zoom view and use diff canvas
+; move in view affect on code
 
-; improve lines (multi lines)
+; improve lines (multi lines fold)
 
 ; change CLI on area
 ; focus on list for dir and show created file and dir
@@ -81,6 +74,7 @@ Red [
 ; scrool numbers
 ; improve delete code lines
 ; add rectangle and circle tool
+; overwrite image if name
 
 ; error line
 ; tabs
@@ -121,14 +115,17 @@ showerror: false
 ; WIP
 userinput: []
 
+pxsize: 8x8
+cansize: 191x191
+
 drawinst: none
 drawmatrix: []
 drawline: false
 delpixel: false
-fillpixel: false
+fillpixels: false
 defimg: "newimg.png"
 imgext: [".png" ".jpeg"]
-pxsize: 8x8
+
 
 coredir: %core/
 make-dir coredir
@@ -238,12 +235,15 @@ apply-scheme: does  [
     askinp/font: copy syswinfnt
     yesbut/font: copy syswinfnt
 
-    drawnew/font: copy syswinfnt
-    drawsel/font: copy syswinfnt
+
+    drawrot/font: copy syswinfnt
+    drawcrop/font: copy syswinfnt
+    drawfill/font: copy syswinfnt
     drawcells/font: copy syswinfnt
     drawdel/font: copy syswinfnt
-    drawfill/font: copy syswinfnt
     drawbrush/font: copy syswinfnt
+    drawpicker1/font: copy syswinfnt
+    drawpicker2/font: copy syswinfnt
     drawsave/font: copy syswinfnt
     setgrid
     updcells
