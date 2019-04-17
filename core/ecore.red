@@ -9,7 +9,7 @@ View [
 		t: text 128x32 "EmptyCore" center font-color white react [face/text: f/text]
 		button 128x64 "⚛︎" font-size 32 [
 			insert t/text rejoin [face/text " "]]
-		text 128x32 "v0.37" center font-color white
+		text 128x32 "v0.38" center font-color white
 		f: field 128 center "EmptyCore" on-change [t/text: face/text]
 	]
 ]

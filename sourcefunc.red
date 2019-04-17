@@ -31,10 +31,12 @@ closemenu: func [face action][
     ]
 ]
 
-flashbutton: function [face event][
+flashbutton: function [face event awaytxt overtxt][
     either event/away?[
+        face/text: awaytxt
         face/font/color: sysclr
     ][
+        face/text: overtxt
         face/font/color: sysclr + extralight
     ]
 ]
@@ -199,6 +201,9 @@ rmrf: func[file] [
             codefile: none
         ]
     ]
+    if editimg [
+        editimg: none
+    ]
     delete file
 ]
 
@@ -295,8 +300,10 @@ treecom: does [
     ]
 ]
 
+updcells: does [ cells/draw: compose/deep/only grid ]
+
 setgrid: func [] [
-    grid: [pen (sysclr + 0.0.0.196) line-width 1]
+    grid: copy [pen (sysclr + 0.0.0.196) line-width 1]
     horline: 0x7 loop 24 [
         append grid compose [line (horline) (191x0 + horline)]
         either ((horline / 8) % 5 = 0x0) [
@@ -318,10 +325,12 @@ setgrid: func [] [
 ]
 
 newimage: does [
-    if (length? drawmatrix) > 0 [saveimage defimg]
+    if (editimg) [saveimage editimg]
     newimg: make image! reduce [canvas/size transparent]
     fillmatrix newimg
     drawpixels drawmatrix canvas
+    file: ifexist defimg
+    editimg: file
 ]
 
 loadimage: func[file] [
@@ -330,6 +339,9 @@ loadimage: func[file] [
     draw newimg compose/deep/only [image (loadimg)]
     fillmatrix newimg
     drawpixels drawmatrix canvas
+
+    editimg: file
+    navigation
 ]
 
 rotateimage: func[canvas] [
@@ -341,13 +353,40 @@ rotateimage: func[canvas] [
     drawpixels drawmatrix canvas
 ]
 
-saveimage: func [defimg][
+saveimage: func [file][
+    cropsize: croppixels
+    st: cropsize/1
+    sz: cropsize/2
     newimg: make image! reduce [canvas/size transparent]
     draw newimg compose/deep/only canvas/draw
-    file: ifexist defimg
-    save/as to-red-file file newimg 'png
+    cropimg: make image! reduce [sz transparent]
+    draw cropimg compose/deep/only [
+        image newimg 0x0 (sz) crop (st) (sz)
+    ]
+    save/as to-red-file file cropimg 'png
     navigation
 ]
+
+croppixels: function [ ] [
+    tmppixels: copy []
+    xmin: cansize/x
+    xmax: 0
+    ymin: cansize/y
+    ymax: 0
+    foreach [st fin clr] drawmatrix [
+        if (clr <> transparent) [
+            if (st/x < xmin) [xmin: st/x]
+            if (st/x > xmax) [xmax: st/x]
+            if (st/y < ymin) [ymin: st/y]
+            if (st/y > ymax) [ymax: st/y]
+        ]
+    ]
+    st: as-pair xmin ymin
+    fin: as-pair xmax ymax
+
+    return compose [(st) ((fin - st) + pxsize - 1)]
+]
+
 
 fillmatrix: func[img][
     drawmatrix: copy[]
@@ -367,7 +406,30 @@ fillmatrix: func[img][
     ]
 ]
 
-updcells: does [cells/draw: compose/deep/only grid]
+toolswitch: func [face bool] [
+    return either bool [
+        drawinst: drawbrush
+        face/font/color: sysclr
+        false
+    ][
+        drawinst: face
+        face/font/color: gray
+        true
+    ]
+]
+
+tooloff: function [face][
+    face/font/color: sysclr
+    false
+]
+
+percent-torgba: function [r g b a][
+    r: r * 255
+    g: g * 255
+    b: b * 255
+    a: a * 254
+    clr: as-rgba to integer! r to integer! g to integer! b to integer! a
+]
 
 getcolor: function [drawmatrix pixel] [
     if (pixel) [
@@ -388,17 +450,12 @@ updpixel: function [drawmatrix pixel color pxstart pxsize][
     append drawmatrix compose [(pxstart) (pxsize) (color)]
 ]
 
-tooloff: function [face][
-    face/font/color: sysclr
-    false
-]
-
 closepixels: function [drawmatrix defclr color pxstart pxfin pass][
     foreach px [0x-8 8x-8 8x0 8x8 0x8 -8x8 -8x0 -8x-8][
         pixst: pxstart + px
         pixsz: pxfin + px
-        if (pixst/x < 0) or (pxfin/x > 256) [continue]
-        if (pixst/y < 0) or (pxfin/y > 256) [continue]
+        if (pixst/x < 0) or (pxfin/x > cansize/x) [continue]
+        if (pixst/y < 0) or (pxfin/y > cansize/y) [continue]
         if (find/only pass compose [(pixst) (pixsz)]) [continue]
 
         nextpixel: find drawmatrix pixst
@@ -426,12 +483,17 @@ setpixel: function [canvas event brush drawmatrix] [
     pixel: find drawmatrix pxstart
     defclr: getcolor drawmatrix pixel
     case [
-        (drawinst/extra = "color") or (drawinst/extra = "picker") [
+        (drawinst/extra = "color") or (drawinst/extra = "fill")[
             if (defclr <> brush/color) [
                 updpixel drawmatrix pixel brush/color pxstart pxfin
                 if (fillpixels) [
                     fillwave drawmatrix defclr brush/color pxstart pxfin
                 ]
+            ]
+        ]
+        (drawinst/extra = "picker") [
+            if (defclr <> transparent) [
+                drawbrush/color: defclr
             ]
         ]
         (drawinst/extra = "del") [
@@ -443,7 +505,7 @@ setpixel: function [canvas event brush drawmatrix] [
 
 drawpixels: function [drawmatrix canvas] [
     canvas/draw: copy []
-    drawcom: copy []
+    drawcom: copy [anti-alias off]
 
     foreach [st sz clr] drawmatrix [
         append drawcom compose [pen (clr) fill-pen (clr) box (st) (sz)]

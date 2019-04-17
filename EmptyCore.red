@@ -33,51 +33,38 @@ Red [
     License: "MIT"
     Needs: View
 ]
-; 🧩 ⚙️  ▦□ ⧈ ◱ ◰ ⧉  ▨ ⃞   ꙮ     𖣯▦⊞➲
-; all var stay forever?
+; 🧩 ⚙️  ▦□◰⧉▨𖣯⊞➲
+; all var stay forever?⧉
 
-; 0.4
+; 0.39
+; check 8x8 px
+; change tree CLI from field to area
+; focus on list when created file and dir
 
-; color picker
-; ctrl z in draw or history
-
+; panels use constants sizes
+; refactor vars and show all source code (use with compose)
 ; imporve grid magic numbers
 
-; crop
-
-; zoom view and use diff canvas
+; 0.4
+; zoom view and user set canvas size
 ; move in view affect on code
-
-; improve lines (multi lines fold)
-
-; change CLI on area
-; focus on list for dir and show created file and dir
-; add move handlers
-
+; project compil mac os win
 ; save user setup and load after main setup
 
-
-; func fold button for panels use constants sizes (change sizes with font)
-
 ; 0.5
-; refactor vars and show all source code (use with compose)
-
+; improve lines (multi lines fold)
+; improve delete code lines
 ; ask input loop pause
 
 ; 0.6
 ; theme rtf color for syntax native mezanine
 
-; project compile
-
-; v0.6
-; resize panels
-; scrool numbers
-; improve delete code lines
-; add rectangle and circle tool
-; overwrite image if name
+; v0.7
+; scrool line numbers
 
 ; error line
-; tabs
+; file tabs close files
+; draw image name
 
 ; ? ?? help what about
 ; import modules
@@ -120,12 +107,16 @@ cansize: 191x191
 
 drawinst: none
 drawmatrix: []
+undodraw: []
+undosteps: 64
 drawline: false
+pickpixel: false
 delpixel: false
 fillpixels: false
 defimg: "newimg.png"
-imgext: [".png" ".jpeg"]
+editimg: none
 
+imgext: [".png" ".jpeg"]
 
 coredir: %core/
 make-dir coredir
@@ -189,7 +180,7 @@ set-scheme: func [schemeclr schemefnt schemesize] [
 apply-scheme: does  [
     syswin/color: dispclr
     syswinfnt/color: sysclr
-    sysbut/font: copy syswinfnt
+    syslab/font: copy syswinfnt
     syspan/color: mainclr
 
     syswin/font: syswinfnt
@@ -216,7 +207,7 @@ apply-scheme: does  [
     consolecol: consoleloop/font/color
     consoleloop/font: copy syswinfnt
     if consolecol = gray [consoleloop/font/color: consolecol]
-    consolereset/font: copy syswinfnt
+
     flashlinetop/color: sysclr + 0.0.0.128
     flashlinebot/color: sysclr + 0.0.0.128
 
@@ -235,23 +226,22 @@ apply-scheme: does  [
     askinp/font: copy syswinfnt
     yesbut/font: copy syswinfnt
 
-
-    drawrot/font: copy syswinfnt
-    drawcrop/font: copy syswinfnt
-    drawfill/font: copy syswinfnt
+    drawpick/font: copy syswinfnt
     drawcells/font: copy syswinfnt
+    drawrot/font: copy syswinfnt
     drawdel/font: copy syswinfnt
+    drawfill/font: copy syswinfnt
+    drawundo/font: copy syswinfnt
     drawbrush/font: copy syswinfnt
-    drawpicker1/font: copy syswinfnt
-    drawpicker2/font: copy syswinfnt
+    drawsliders/color: mainclr
+    drawred/font: copy syswinfnt
+    drawgreen/font: copy syswinfnt
+    drawblue/font: copy syswinfnt
+    drawalpha/font: copy syswinfnt
     drawsave/font: copy syswinfnt
+    drawoverwrite/font: copy syswinfnt
     setgrid
     updcells
-
-    codeclose/font: copy syswinfnt
-    viewclose/font: copy syswinfnt
-    drawclose/font: copy syswinfnt
-    treeclose/font: copy syswinfnt
 
     codepan/color: mainclr
     viewpan/color: mainclr
@@ -280,7 +270,7 @@ sysclose-wh: 0x256
 
 
 Core: [
-    title "⚛︎ EmptyCore v0.36"
+    title "⚛︎ EmptyCore v0.38"
     backdrop backclr
     origin 0x0 space 1x0
     style display: area dispclr wrap font syswinfnt no-border
@@ -295,20 +285,22 @@ Core: [
         panel [
             origin 0x0 space 0x0
 
-            sysbut: text "▾" 16 center font syswinfnt on-down [
+            syslab: text "Source" font syswinfnt extra "Hide" on-down [
                                     face/selected: true
-                                    either face/text = "▾" [
-                                        face/text: "▸"
+                                    face/extra: either (face/extra = "Show") [
+                                        "Hide"
                                     ][
-                                        face/text: "▾"
+                                        "Show"
                                     ]
-                                ] on-over [flashbutton face event]
-            syslab: text "Source" font syswinfnt
+                                    face/text: "Source"
+                                ] on-over [flashbutton face event "Source" face/extra]
+
         ]
         return
 
         syswin: display maincode syswin-wh on-change [
             upd-scheme
+            set-focus face
         ]
 
         sysopt: panel 196x256 dispclr [
@@ -359,6 +351,15 @@ ViewRed/options/flags layout Core [
                             closemenu treefile does [
                                 askuser/file treefile "Create File" deffile]
                         ]
+
+                        (event/key = #"R")[
+                            sel: treelist/selected
+                            if  (sel <> none) [
+                                closemenu treename does [
+                                    askuser/rename face "Rename" treelist/data/:sel
+                                ]
+                            ]
+                        ]
                         event/key = 8 [
                             sel: treelist/selected
                             if (codefile) [
@@ -373,15 +374,21 @@ ViewRed/options/flags layout Core [
                 ]
                 if (form event/key) = "left-command" [⌘: true]
                 if (form event/key) = "left-shift" [leftshift: true]
-            ] on-key-up: func [face event][
+            ]
+            on-key-up: func [face event][
                 if (form event/key) = "left-command" [⌘: false]
                 if (form event/key) = "left-shift" [leftshift: false]
-            ] on-close: func [face event][autosave]
+            ]
+            on-close: func [face event][autosave]
+
             on-up: func[face event][
-                if sysbut/selected [
-                    face/size: either sysbut/text = "▸" [face/size - sysclose-wh
-                                        ][face/size + sysclose-wh]
-                    sysbut/selected: none
+                if syslab/selected [
+                    face/size: either syslab/extra = "Show" [
+                        face/size - sysclose-wh
+                    ][
+                        face/size + sysclose-wh
+                    ]
+                    syslab/selected: none
                 ]
             ]
         ]

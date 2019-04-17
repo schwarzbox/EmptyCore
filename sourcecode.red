@@ -8,15 +8,12 @@ sourcecode: [
         origin 0x0 space 0x0
         treebar: panel [
             origin 0x0 space 0x0
-            treeclose: text "▾" 16 center font syswinfnt on-down [
-                    closepanel treepan treebar face 196x0 196x211
-                ] on-over [flashbutton face event]
             treelabel: text "Tree" 48 font syswinfnt on-up [
                     face/font/color: sysclr
                     navdir: copy homedir
                     navigation
                 ] on-down [face/font/color: gray
-                ] on-over [flashbutton face event]
+                ] on-over [flashbutton face event "Tree" "Home"]
 
             treedir: text "❒" 24 center font syswinfnt on-down [
                     closemenu face does [
@@ -77,7 +74,7 @@ sourcecode: [
                         face/font/color: sysclr
                         askfunc
                     ] on-down [face/font/color: gray
-                    ] on-over [flashbutton face event]
+                    ] on-over [flashbutton face event face/text face/text]
         ]
 
         treespace: panel 196x211 dispclr [
@@ -124,7 +121,7 @@ sourcecode: [
                 if (form event/key) = "left" [isback sel]
             ]
         ]on-create [navigation]
-    ] loose
+    ]
 
 
     drawpan: panel mainclr [
@@ -132,54 +129,19 @@ sourcecode: [
         origin 0x0 space 0x0
         drawbar: panel [
             origin 0x0 space 0x0
-            drawclose: text "▾" 16 center font syswinfnt on-down [
-                clos: closepanel drawpan drawbar face 196x0 196x250
-            ]on-over [flashbutton face event]
-
             drawlabel: text "Draw" 48 font syswinfnt extra "new"
                 on-down [
                     face/font/color: gray
                 ] on-up [
                     newimage
                     face/font/color: sysclr
-                ] on-over [flashbutton face event]
+                ] on-over [flashbutton face event "Draw" "New"]
 
-
-            drawcrop: text "◰" 24 center font syswinfnt extra "crop"
-
-            drawrot: text "↻" 24 center font syswinfnt extra "rot"
+            drawpick: text "?" 24 center font syswinfnt extra "picker"
                 on-down [
-                    face/font/color: gray
-                ] on-up [
-                    rotateimage canvas
-                    face/font/color: sysclr
-                ] on-over [flashbutton face event]
-
-            drawdel: text "✄" 24 center font syswinfnt extra "del"
-                on-down [
-                    face/font/color: either delpixel [
-                        drawinst: none
-                        delpixel: false
-                        sysclr
-                    ][
-                        fillpixels: tooloff drawfill
-                        drawinst: face
-                        delpixel: true
-                        gray
-                    ]
-                ]
-
-            drawfill: text "▣" 24 center font syswinfnt
-                on-down [
-                    face/font/color: either fillpixels [
-                        fillpixels: false
-                        sysclr
-                    ][
-                        drawinst: drawbrush
-                        delpixel: tooloff drawdel
-                        fillpixels: true
-                        gray
-                    ]
+                    pickpixel: toolswitch face pickpixel
+                    fillpixels: tooloff drawfill
+                    delpixel: tooloff drawdel
                 ]
 
             drawcells: text "⌗" 24 center font syswinfnt extra "cells"
@@ -192,21 +154,65 @@ sourcecode: [
                         updcells
                     ]
                 ]
+
+            drawrot: text "↻" 24 center font syswinfnt extra "rot"
+                on-down [
+                    face/font/color: gray
+                ] on-up [
+                    rotateimage canvas
+                    face/font/color: sysclr
+                ] on-over [flashbutton face event face/text face/text]
+
+            drawdel: text "✄" 24 center font syswinfnt extra "del"
+                on-down [
+                    delpixel: toolswitch face delpixel
+                    fillpixels: tooloff drawfill
+                    pickpixel: tooloff drawpick
+                ]
+
+            drawfill: text "▣" 24 center font syswinfnt extra "fill"
+                on-down [
+                    fillpixels: toolswitch face fillpixels
+                    delpixel: tooloff drawdel
+                    pickpixel: tooloff drawpick
+                ]
+
+            drawundo: text "⇠" 24 center font syswinfnt extra "undo"
+                on-down [
+                    face/font/color: gray
+                ] on-up [
+                    undo: take/last undodraw
+                    if (undo) [
+                        drawmatrix: copy undo
+                        drawpixels drawmatrix canvas
+                    ]
+
+                    face/font/color: sysclr
+                ] on-over [flashbutton face event face/text face/text]
         ]
 
         drawmachine: panel 196x250 dispclr [
-            origin 2x2 space 1x1
+            origin 2x2 space 1x2
             canvas: box cansize draw []
-            do [setgrid]
-            at 2x2 cells: box cansize draw compose/deep/only grid all-over
+            at 2x2 cells: box cansize draw [] all-over
                 on-down [
                     if (drawinst) [
+                        append/only undodraw copy drawmatrix
                         drawline: either fillpixels [false][true]
                         setpixel canvas event drawbrush drawmatrix
+
+                        if (pickpixel) [
+                            pickpixel: toolswitch drawpick pickpixel
+                            drawinst: drawbrush
+                        ]
                     ]
+                ]on-alt-down [
+                    delpixel: toolswitch drawdel delpixel
+                    fillpixels: tooloff drawfill
                 ]on-up [
-                    if (drawinst) [ drawline: false]
+                    if (drawinst) [drawline: false]
                 ]on-over [
+                    if (length? undodraw) > undosteps [take undodraw]
                     if (drawinst) [
                         getinput: either (event/away?) [
                             false
@@ -218,32 +224,58 @@ sourcecode: [
                             setpixel canvas event drawbrush drawmatrix
                         ]
                     ]
+                ] on-create [
+                    setgrid
+                    updcells
                 ]
             return
-            style pxcolor: base 15x15 transparent extra "color"
+            style pxcolor: base 15x15 dispclr extra "color"
                 on-down [
-                    drawinst: face
+                    drawinst: drawbrush
                     drawbrush/color: face/color
                     face/color: gray
                 ] on-up [
                     face/color: drawbrush/color
                     delpixel: tooloff drawdel
+                ] on-alt-down [
+                    face/color: drawbrush/color
                 ]
-            style picker: pxcolor "□" center font syswinfnt
-                on-down [
-                    ; drawinst: face
-                    ; drawbrush/color: face/color
-                    ; face/color: gray
-                ] on-up [
-                    ; face/color: drawbrush/color
-                    ; delpixel: tooloff drawdel
-                ]
+
+            style sl: slider 76x16 0% [
+                drawbrush/color: percent-torgba R/data G/data B/data A/data
+            ]
+            at 2x122 drawsliders: panel 95x72 dispclr [
+                origin 1x1 space 1x2
+                below
+                drawred: base 16x16 "R" center transparent font syswinfnt
+                drawgreen: base 16x16 "G" center transparent font syswinfnt
+                drawblue: base 16x16 "B" center transparent font syswinfnt
+                drawalpha: base 16x16 "𝞪" center transparent font syswinfnt
+                return
+                R: sl
+                G: sl
+                B: sl
+                A: sl 100%
+            ]
+            do [drawsliders/visible?: false]
+
             colors: panel [
                 across
                 origin 0x0 space 1x1
-                drawbrush: base 15x15 transparent "☄︎" center font syswinfnt extra "brush"
-                drawpicker1: picker
-                drawpicker2: picker
+                drawbrush: base 15x15  "☄︎" center font syswinfnt extra "color"
+                    on-down [
+                        drawinst: face
+                        delpixel: tooloff drawdel
+
+                        either drawsliders/visible? [
+                            drawsliders/visible?: false
+                        ][
+                            drawsliders/visible?: true
+                        ]
+                    ]
+                do [
+                    drawbrush/color: percent-torgba R/data G/data B/data A/data
+                ]
 
                 pxcolor crimson
                 pxcolor brick
@@ -254,9 +286,9 @@ sourcecode: [
                 pxcolor navy
                 pxcolor reblue
                 pxcolor aqua
-
-                return
                 pxcolor purple
+                pxcolor violet
+                return
                 pxcolor sky
                 pxcolor pink
                 pxcolor gold
@@ -264,6 +296,8 @@ sourcecode: [
                 pxcolor sienna
                 pxcolor olive
                 pxcolor silver
+                pxcolor pewter
+
                 pxcolor gray
                 pxcolor coal
                 pxcolor black
@@ -271,16 +305,25 @@ sourcecode: [
             ]
 
             return
-            pad 0x2
-            drawsave: text "↳" 196 center font syswinfnt extra "save"
+            pad 0x1
+            drawsave: text "✚ᐩ" 95 mainclr center font syswinfnt
                 on-down [
-                    saveimage defimg
+                    file: ifexist defimg
+                    editimg: file
+                    saveimage file
                 ]
                 on-over [
-                    flashbutton face event
+                    flashbutton face event face/text face/text
+                ]
+            drawoverwrite: text "↳" 95 mainclr center font syswinfnt
+                on-down [
+                    if (editimg) [saveimage editimg]
+                ]
+                on-over [
+                    flashbutton face event face/text face/text
                 ]
         ] on-create [newimage]
-    ] loose
+    ]
     return
 
     style display: area 602x400 dispclr wrap font codefnt no-border
@@ -292,18 +335,13 @@ sourcecode: [
         origin 0x0 space 1x1
         codebar: panel [
             origin 0x0 space 0x0
-            codeclose: text "▾" 16 center font syswinfnt on-down [
-                closepanel codepan codebar face 602x0 602x480
-            ]on-over [flashbutton face event]
-
             do [getinput: false]
-            codelabel: text "Code" 48 font syswinfnt
-
-            consolereset: text "➡︎" 24 center font syswinfnt on-up [
+            codelabel: text "Code" 48 font syswinfnt on-up [
                 face/font/color: sysclr
                 build
             ]on-down [face/font/color: gray
-            ]on-over [flashbutton face event]
+            ]on-over [flashbutton face event "Code" "Run"]
+
             consoleloop: text "∞" 24 font syswinfnt on-down[
                 face/font/color: either autorun [
                     autorun: false
@@ -403,19 +441,16 @@ sourcecode: [
                 set-focus codemill
             ]
         ]
-    ] loose
+    ]
     return
     viewpan: panel mainclr [
         below
         origin 0x0 space 0x0
         viewbar: panel [
             origin 0x0 space 0x0
-            viewclose: text "▾" 16 center font syswinfnt on-down [
-                closepanel viewpan viewbar face 640x0 640x480
-            ]on-over [flashbutton face event]
-            viewlabel: text "View" font syswinfnt
+            viewlabel: text "View" 48 font syswinfnt
         ]
         viewengine: panel 640x480 dispclr
-    ] loose
+    ]
     return
 ]
