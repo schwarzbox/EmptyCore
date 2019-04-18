@@ -6,7 +6,7 @@ Red [Needs: View]
 ; add impulse
 ; stars
 ; split aster
-; animation (fire engine with particles)
+; animation (fire engine boom with particles)
 
 random/seed now
 WH: 640x480
@@ -88,12 +88,26 @@ proto: object [tag: "proto"  img: none size: none offset: 0x0
 ship: make proto [tag: "ship" img: simg size: simg/size
 				x: MIDWID - ((simg/size/x / 2))
 				y: MIDHEI - ((simg/size/y / 2))
-				speed: 64
-				torque: 32
+				speed: 16
+				torque: 4
 				piv: (simg/size / 2) * sc
+				control: [w: false a: false d: false space: false]
 				guns: 0x32
 				cooldown: 2
+				delay: 0
 			update: func [self] [
+				if (control/w = true) [
+					applyforce ((cosine angle) * speed) ((sine angle) * speed)
+				]
+				if (control/d = true) [
+					applytorque torque
+				]
+				if (control/a = true) [
+					applytorque (torque * -1)
+				]
+				if (control/space = true) [
+					fire
+				]
 				linearvelocity
 				angularvelocity
 				lineardamp
@@ -103,6 +117,7 @@ ship: make proto [tag: "ship" img: simg size: simg/size
 				anchor: ((as-pair x y) * sc) + piv
 				offset: as-pair x y
 			]
+
 			fire: does [
 				coslas: cosine ship/angle
 				sinlas: sine ship/angle
@@ -125,23 +140,26 @@ ship: make proto [tag: "ship" img: simg size: simg/size
 
 				dir2x: horx - very + (midwid) + (ship/x + (szx))
 				dir2y: hory + verx + (midhei) + (ship/y + (szy))
-
-				either (cooldown = 2) [
-					las1: make laser [x: dir1x - (laser/size/x / 2)
-										y: dir1y - (laser/size/y / 2)
+				either (delay <= 0) [
+					either (cooldown = 2) [
+						las1: make laser [x: dir1x - (laser/size/x / 2)
+											y: dir1y - (laser/size/y / 2)
+												angle: ship/angle]
+						las1/applyforce (coslas * las1/speed) (sinlas * las1/speed)
+						append objects copy las1
+						cooldown: 1
+						delay: 8
+					][
+						las2: make laser [x: dir2x - (laser/size/x / 2)
+										y: dir2y - (laser/size/y / 2)
 											angle: ship/angle]
-					las1/applyforce (coslas * las1/speed) (sinlas * las1/speed)
-					append objects copy las1
-					cooldown: 1
-				][
-					las2: make laser [x: dir2x - (laser/size/x / 2)
-									y: dir2y - (laser/size/y / 2)
-										angle: ship/angle]
-					las2/applyforce (coslas * las2/speed) (sinlas * las2/speed)
-					append objects copy las2
-					cooldown: 2
+						las2/applyforce (coslas * las2/speed) (sinlas * las2/speed)
+						append objects copy las2
+						cooldown: 2
+						delay: 8
 
-				]
+					]
+				][delay: delay - 1]
 			]
 		]
 
@@ -224,16 +242,34 @@ View [
 		key: form (event/key)
 		case/all [
 			(key = "W") [
-				ship/applyforce ((cosine ship/angle) * ship/speed) ((sine ship/angle) * ship/speed)
+				ship/control/w: true
 			]
 			(key = "D") [
-				ship/applytorque ship/torque
+				ship/control/d: true
+
 			]
 			(key = "A") [
-				ship/applytorque (ship/torque * -1)
+				ship/control/a: true
+			]
+			(key = " ") [ ship/control/space: true
 			]
 		]
-		if (key = " ") [ ship/fire ]
+	] on-key-up [
+		key: form (event/key)
+		case/all [
+			(key = "W") [
+				ship/control/w: false
+			]
+			(key = "D") [
+				ship/control/d: false
+
+			]
+			(key = "A") [
+				ship/control/a: false
+			]
+			(key = " ") [ ship/control/space: false
+			]
+		]
 	]
 
 ]
