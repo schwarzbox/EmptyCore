@@ -1,10 +1,8 @@
-# EmptyCore-Red
-
-WIP
+# EmptyCore
 
 v0.38
 
-"EmptyCore" - Experimental LiveCoding Environment
+Experimental LiveCoding Environment
 
 With "EmptyCore" you can see result of the executed code in a real-time.
 You can stop it by pressing ∞ in the Code panel.
@@ -35,7 +33,7 @@ v0.38
 
 - simple file tree
 
-- draw editor (pixel editor, .png, 191x191 px, colorpicker, grid, rotate, del, fill, undo & auto crop)
+- draw editor (pixel editor, .png, 192x192 px, colorpicker, grid, rotate, del, fill, undo & auto crop)
 
 - code editor (console output, errors)
 

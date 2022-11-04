@@ -33,8 +33,8 @@ Red [
     License: "MIT"
     Needs: View
 ]
-; 🧩 ⚙️  ▦□◰⧉▨𖣯⊞➲
-; all var stay forever?⧉
+; 🧩 ⚙️
+; all var stay forever?
 
 ; 0.39
 ; check 8x8 px
